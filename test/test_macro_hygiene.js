@@ -70,12 +70,12 @@ describe("macro hygiene", function() {
   it("should do the correct renaming without macros for vars and params", function() {
     var z = (function() {
       return (function(x) {
-        var y = x;
         var x = "foo"
+        var y = x;
         return y
       })(42);
     })();
-    expect(z).to.be(42)
+    expect(z).to.be("foo")
   });
 
   it("should do the correct renaming with macros for vars", function() {
@@ -90,18 +90,40 @@ describe("macro hygiene", function() {
     expect(z).to.be("foo")
   });
 
-  // // it("should work for vars with hoisting", function() {
-  // //   macro m {
-  // //     case $x:lit => {
-  // //       var tmp = $x;
-  // //     }
-  // //   }
+  it("should work with a nested macro", function() {
+    macro main {
+      case ($a) => {
+        (function(foo) {
+          var bar = 1 + foo;
+          return sub($a);
+        })(2);
+      }
+    }
+    var foo = 100;
+    var bar = 200;
+    macro sub {
+      case ($a) => {
+        foo + bar + $a
+      }
+    }
 
-  // //   var tmp = "outer"
-  // //   m "inner"
-  // //   expect(tmp).to.be("outer");
+    var z = main(3);
 
-  // // });
+    expect(z).to.be(303);
+  });
+
+  // it("should work for vars with hoisting", function() {
+  //   macro m {
+  //     case $x:lit => {
+  //       var tmp = $x;
+  //     }
+  //   }
+
+  //   var tmp = "outer"
+  //   m "inner"
+  //   expect(tmp).to.be("outer");
+
+  // });
 
   // // it("should work for vars with hoisting and params", function() {
   // //   function f(tmp) {

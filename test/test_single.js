@@ -11,12 +11,21 @@ var flatten = expander.flatten;
 // all the tests again. Useful when trying to use
 // logging to debug.
 
+function tokValues (stxArray) {
+    return stxArray.map(function(el) {
+        return el.token.value;
+    });
+}
 
 // NOT RUN THROUGH THE COMPILER!
 
 describe("single test", function() {
   it("should pass", function() {
-    var res = expand(read("function foo(a, b) { return a; }"));
-    // console.log(flatten(res))
+        var stx = parser.read("foo(42, 24)");
+        var res = (expander.expand(stx));
+
+        expect(tokValues(res)).to.eql(["foo", "(", 42, ",",  24, ")", ""]);
+
+
   });
 })
