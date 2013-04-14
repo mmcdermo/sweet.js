@@ -75,3 +75,32 @@ function sir_fix_alot() {
     };
 
 }
+
+/* 
+ Convert a source map of the format
+ { "0" : [{origLine: 0, newLine : 0, origCols: [0,2], newCols: [0,42], range: [0, 42]
+          , {origLine: ..... }] }
+ to a mozilla source-map
+ This requires line & col information rather than range information.
+ This also means that we need to fix up line & column information.
+*/
+
+function convertSourceMap(fileName, m){
+    var s = new SourceMapGenerator({file : fileName});
+    for(lineN in m){
+	for(k in m[lineN]){
+	    s.addMapping({
+		source : fileName
+		,name : ""
+		,original : { 
+		    line: m[lineN][k].origLine,
+		    column : m[lineN][k].origCols[0]
+		},
+		generated : {
+		    line: m[lineN][k].newLine,
+		    column: m[lineN][k].newCols[0]
+		}
+	    });
+	}
+    }
+}
