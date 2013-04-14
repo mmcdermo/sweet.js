@@ -4,10 +4,17 @@
   <title>Debug Sweet.js</title>
   <script data-main="scripts/main" src="scripts/require.js"></script>
   <script id="sweetjs" type="text/sweetjs">
-
-  function foo() {
-  	var x = 42;
+      
+  macro def {
+    case $name:ident $params $body => {
+      function $name $params $body
+    }
   }
+
+  def sweet(a) {
+    console.log("Macros are sweet!");
+  }
+
 
 </script>
 </head>
