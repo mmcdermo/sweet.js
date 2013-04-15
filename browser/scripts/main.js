@@ -65,8 +65,7 @@ function sir_fix_alot() {
 	    current_loc += object.token.value.length;    //adjust current location by size of token
 	}
 	else {
-	    console.log("Shit. Edge case.");
-	    console.log(object);
+	    console.log("EOF token, I think.");
 	}
 	object.token.range[1] = current_loc;         //set ending spot to current location
 	current_loc += 1;
