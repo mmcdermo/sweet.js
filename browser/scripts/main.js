@@ -40,22 +40,50 @@ require(["sweet","./parser", "./expander"], function(sweet, parser, expander) {
 
 //attempts to repair range information
 function sir_fix_alot() {
-    var current_loc = 0;
-    var line_number = 0;
+    var loc = 0;
+    var lineNumber = 0;
     var col = 0;
+    var newlineTokens = ["{", "}", ";"];
 
-    return function (obj) {
+    function copyOld(obj) {
+	//range
 	if (obj.token.range === undefined) {
 	    obj.token.old_range = undefined;
 	    obj.token.range = new Array(2);
 	}
-	
-	obj.token.range[0] = current_loc;
-	if (obj.token.value !== undefined) {
-	    current_loc += obj.token.value.length;
+	else {
+	    obj.token.old_range = obj.token.range;
 	}
-	obj.token.range[1] = current_loc;
-	current_loc += 1;
+	
+	//line number
+	obj.token.old_lineNumber = obj.token.lineNumber;
+
+	//line start
+	obj.token.old_lineStart = obj.token.lineStart;
+    }
+
+    //Takes in a token and modifies its line number/col and range information
+    return function (obj) {
+	copyOld(obj); //copys old information for mapping reasons
+
+
+	//write new location information to token
+	obj.token.range[0] = loc;
+	obj.token.lineStart = col;
+	obj.token.lineNumber = lineNumber;
+	if (obj.token.value !== undefined) {
+	    loc += obj.token.value.length;
+	    col += obj.token.value.length;
+	}
+	obj.token.range[1] = loc;
+	loc += 1;
+	col += 1;
+
+	//should the token cause a newline to occur
+	if (newlineTokens.indexOf(obj.token.value) !== -1) {
+	    col = 0;
+	    lineNumber += 1;
+	}
     };
 
 }
