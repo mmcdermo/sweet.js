@@ -41,6 +41,8 @@ require(["sweet","./parser", "./expander"], function(sweet, parser, expander) {
 //attempts to repair range information
 function sir_fix_alot() {
     var current_loc = 0;
+    var line_number = 0;
+    var col = 0;
 
     return function (obj) {
 	if (obj.token.range === undefined) {
