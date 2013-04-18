@@ -85,4 +85,6 @@ function convertSourceMap(fileName, m){
 	    });
 	}
     }
+    return s;
 }
+
