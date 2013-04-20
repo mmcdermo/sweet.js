@@ -32,7 +32,9 @@ require(["sweet","./parser", "./expander"], function(sweet, parser, expander) {
 	var fixer = sir_fix_alot();
 	res.map(fixer);
 
-	console.log(res);
+	//TODO: call the function that makes this a src map
+	var almost_a_src_map = tokensToMappings(res);
+	console.log(almost_a_src_map);
 
         document.getElementById("out").innerHTML = res.join("\n");
     };
@@ -52,7 +54,7 @@ function sir_fix_alot() {
 	    obj.token.range = new Array(2);
 	}
 	else {
-	    obj.token.old_range = obj.token.range;
+	    obj.token.old_range = obj.token.range.slice();
 	}
 	
 	//line number
@@ -86,6 +88,17 @@ function sir_fix_alot() {
 	}
     };
 
+}
+
+//this will hopefully turn the token array into the array format you want for convertSourceMap
+function tokensToMappings(objs) {
+    return objs.map(function(obj) {
+	return { origLine: obj.token.old_lineNumber
+	       , newLine:  obj.token.lineNumber
+	       , origCols: obj.token.old_range
+	       , newCols:  obj.token.range
+	       , range:    obj.token.range};
+    });
 }
 
 /* 
