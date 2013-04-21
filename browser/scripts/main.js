@@ -6,7 +6,7 @@ requirejs.config({
     }
 });
 
-require(["sweet","./parser", "./expander"], function(sweet, parser, expander) {
+require(["sweet","./parser", "./expander", "./source-map"], function(sweet, parser, expander, sourceMap) {
     var read = parser.read;
     var expand = expander.expand;
     var flatten = expander.flatten;
