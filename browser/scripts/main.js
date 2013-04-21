@@ -6,10 +6,12 @@ requirejs.config({
     }
 });
 
-require(["sweet","./parser", "./expander", "./source-map"], function(sweet, parser, expander, sourceMap) {
+require(["sweet","./parser", "./expander"
+	 , "./source-map/source-map-generator"], function(sweet, parser, expander, sourceMap) {
     var read = parser.read;
     var expand = expander.expand;
     var flatten = expander.flatten;
+    console.log(sourceMap);
 
     window.read = parser.read;
     window.expand = expander.expand;
@@ -34,7 +36,13 @@ require(["sweet","./parser", "./expander", "./source-map"], function(sweet, pars
 
 	//TODO: call the function that makes this a src map
 	var almost_a_src_map = tokensToMappings(res);
+	console.log("Almost");
 	console.log(almost_a_src_map);
+	
+	SourceMapGenerator = sourceMap.SourceMapGenerator;
+	var z = convertSourceMap("aFileName.sjs", almost_a_src_map);
+	console.log("Converted");
+	console.log(z);
 
         document.getElementById("out").innerHTML = res.join("\n");
     };
@@ -93,18 +101,23 @@ function sir_fix_alot() {
 //this will hopefully turn the token array into the array format you want for convertSourceMap
 function tokensToMappings(objs) {
     return objs.map(function(obj) {
+	var nc = [0,0];
+	if(obj.token.value !== undefined)
+	    nc = [obj.token.lineStart
+		  , obj.token.lineStart + obj.token.value.length]	    
 	return { origLine: obj.token.old_lineNumber
 	       , newLine:  obj.token.lineNumber
 	       , origCols: obj.token.old_range
-	       , newCols:  obj.token.range
+	       , newCols:  nc
+               , origObj:  obj
 	       , range:    obj.token.range};
     });
 }
 
 /* 
  Convert a source map of the format
- { "0" : [{origLine: 0, newLine : 0, origCols: [0,2], newCols: [0,42], range: [0, 42]
-          , {origLine: ..... }] }
+ [{origLine: 0, newLine : 0, origCols: [0,2], newCols: [0,42], range: [0, 42]
+          , {origLine: ..... }]
  to a mozilla source-map
  This requires line & col information rather than range information.
  This also means that we need to fix up line & column information.
@@ -112,22 +125,24 @@ function tokensToMappings(objs) {
 
 function convertSourceMap(fileName, m){
     var s = new SourceMapGenerator({file : fileName});
-    for(lineN in m){
-	for(k in m[lineN]){
-	    s.addMapping({
-		source : fileName
-		,name : ""
-		,original : { 
-		    line: m[lineN][k].origLine,
-		    column : m[lineN][k].origCols[0]
-		},
-		generated : {
-		    line: m[lineN][k].newLine,
-		    column: m[lineN][k].newCols[0]
-		}
-	    });
-	}
+    for(k in m){
+	s.addMapping({
+	    source : fileName
+	    ,name : ""
+	    ,original : { 
+		line: m[k].origLine,
+		column : m[k].origCols[0]
+	    },
+	    generated : {
+		line: m[k].newLine,
+		column: m[k].newCols[0]
+	    }
+	});
     }
+
     return s;
 }
 
+function composeSourceMaps(m1, m2){
+    return m1;
+}
