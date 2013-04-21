@@ -7,11 +7,11 @@ requirejs.config({
 });
 
 require(["sweet","./parser", "./expander"
-	 , "./source-map/source-map-generator"], function(sweet, parser, expander, sourceMap) {
+	 , "./source-map/source-map-generator"
+	 , "./source-map/source-map-consumer"], function(sweet, parser, expander, sourceMapG, sourceMapC) {
     var read = parser.read;
     var expand = expander.expand;
     var flatten = expander.flatten;
-    console.log(sourceMap);
 
     window.read = parser.read;
     window.expand = expander.expand;
@@ -39,10 +39,16 @@ require(["sweet","./parser", "./expander"
 	console.log("Almost");
 	console.log(almost_a_src_map);
 	
-	SourceMapGenerator = sourceMap.SourceMapGenerator;
-	var z = convertSourceMap("aFileName.sjs", almost_a_src_map);
+	//var SourceMapConsumer = sourceMapC.SourceMapConsumer;
+	var z = convertSourceMap(sourceMapG.SourceMapGenerator, "aFileName.sjs", almost_a_src_map);
 	console.log("Converted");
 	console.log(z);
+	
+	var b = composeSourceMaps(sourceMapG.SourceMapGenerator
+				  ,sourceMapC.SourceMapConsumer
+				  , z, z);
+	console.log("Composed");
+	console.log(b);
 
         document.getElementById("out").innerHTML = res.join("\n");
     };
@@ -123,26 +129,51 @@ function tokensToMappings(objs) {
  This also means that we need to fix up line & column information.
 */
 
-function convertSourceMap(fileName, m){
+function convertSourceMap(SourceMapGenerator, fileName, m){
     var s = new SourceMapGenerator({file : fileName});
-    for(k in m){
-	s.addMapping({
-	    source : fileName
-	    ,name : ""
-	    ,original : { 
-		line: m[k].origLine,
-		column : m[k].origCols[0]
-	    },
-	    generated : {
-		line: m[k].newLine,
-		column: m[k].newCols[0]
-	    }
-	});
-    }
-
-    return s;
+    m.map(function(obj){
+	if(obj.origCols !== undefined){
+	    var z = {
+		source : fileName
+		,name : "Something"
+		,original : { 
+		    line: 1 + obj.origLine,
+		    column : obj.origCols[0]
+		},
+		generated : {
+		    line: 1 + obj.newLine,
+		    column: obj.newCols[0]
+		}
+	    };
+	    s.addMapping(z);
+	    return z;
+	}
+	else { 
+	    console.log("Undefined orig cols");
+	    console.log(obj);
+	    return undefined; 
+	}
+    });
+    return s.toJSON();
 }
 
-function composeSourceMaps(m1, m2){
-    return m1;
+function composeSourceMaps(SourceMapGenerator, SourceMapConsumer, m1, m2){
+    var r = new SourceMapGenerator({file : m1.file});
+    var m1c = new SourceMapConsumer(m2);
+    var m2c = new SourceMapConsumer(m2);
+    
+    m2c.eachMapping(function(mapping){
+	var o = m1c.originalPositionFor({ line: mapping.originalLine
+					  , column: mapping.originalColumn});
+	var x = {
+	    source : m1.file
+	    ,name : o.name || "Something"
+	    ,original : o 
+	    ,generated : { line: mapping.generatedLine
+			   ,column: mapping.generatedColumn }
+	};
+	console.log(x);
+	r.addMapping(x);
+    });
+    return r.toJSON();
 }
