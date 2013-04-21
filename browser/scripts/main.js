@@ -34,12 +34,10 @@ require(["sweet","./parser", "./expander"
 	var fixer = sir_fix_alot();
 	res.map(fixer);
 
-	//TODO: call the function that makes this a src map
 	var almost_a_src_map = tokensToMappings(res);
 	console.log("Almost");
 	console.log(almost_a_src_map);
 	
-	//var SourceMapConsumer = sourceMapC.SourceMapConsumer;
 	var z = convertSourceMap(sourceMapG.SourceMapGenerator, "aFileName.sjs", almost_a_src_map);
 	console.log("Converted");
 	console.log(z);
@@ -107,13 +105,19 @@ function sir_fix_alot() {
 //this will hopefully turn the token array into the array format you want for convertSourceMap
 function tokensToMappings(objs) {
     return objs.map(function(obj) {
+	var oc = [0,0];
 	var nc = [0,0];
-	if(obj.token.value !== undefined)
+	if(obj.token.value !== undefined){
+	    if(obj.token.old_lineStart !== undefined){
+		oc = [obj.token.old_lineStart
+		      , obj.token.old_lineStart + obj.token.value.length]
+	    }
 	    nc = [obj.token.lineStart
 		  , obj.token.lineStart + obj.token.value.length]	    
+	}
 	return { origLine: obj.token.old_lineNumber
 	       , newLine:  obj.token.lineNumber
-	       , origCols: obj.token.old_range
+	       , origCols: oc
 	       , newCols:  nc
                , origObj:  obj
 	       , range:    obj.token.range};
@@ -132,7 +136,7 @@ function tokensToMappings(objs) {
 function convertSourceMap(SourceMapGenerator, fileName, m){
     var s = new SourceMapGenerator({file : fileName});
     m.map(function(obj){
-	if(obj.origCols !== undefined){
+	if(obj.origCols !== undefined && obj.origLine !== undefined){
 	    var z = {
 		source : fileName
 		,name : "Something"
@@ -149,7 +153,7 @@ function convertSourceMap(SourceMapGenerator, fileName, m){
 	    return z;
 	}
 	else { 
-	    console.log("Undefined orig cols");
+	    console.log("Undefined orig info");
 	    console.log(obj);
 	    return undefined; 
 	}
@@ -172,7 +176,6 @@ function composeSourceMaps(SourceMapGenerator, SourceMapConsumer, m1, m2){
 	    ,generated : { line: mapping.generatedLine
 			   ,column: mapping.generatedColumn }
 	};
-	console.log(x);
 	r.addMapping(x);
     });
     return r.toJSON();
