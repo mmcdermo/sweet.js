@@ -68,6 +68,7 @@ function sir_fix_alot() {
 	else {
 	    obj.token.old_range = obj.token.range.slice();
 	}
+	obj.token.range = new Array(2); //this is super dumb and we should just fix the root problem
 	
 	//line number
 	obj.token.old_lineNumber = obj.token.lineNumber;
