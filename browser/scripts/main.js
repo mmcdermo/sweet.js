@@ -24,15 +24,26 @@ require(["sweet","./parser", "./expander"
 
         var code = document.getElementById("sweetjs").text;
         // var res = sweet.compile(code);
-        var res = (expand(read(code)));
+
+	var readRes = read(code, {comment: true});
+	var comments = readRes[readRes.length - 1];
+	readRes = readRes.splice(0, readRes.length - 1);
+
+	console.log("Comments: ");
+	console.log(comments);
+        var res = expand(readRes);
         // var result = expander.enforest(parser.read(code));
         // var result = expander.expandf(parser.read(code));
         //console.log(parser.parse(res));
 
 //	res.map(printSyntax);
 
-	var fixer = sir_fix_alot();
-	res.map(fixer);
+	console.log(res);
+	var fix = sir_fix_alot(comments);
+	res.map(fix.fixer);
+
+	console.log("Comments: ");
+	console.log(fix.retrieveComments());
 
 	var almost_a_src_map = tokensToMappings(res);
 	console.log("Almost");
@@ -53,11 +64,13 @@ require(["sweet","./parser", "./expander"
 });
 
 //attempts to repair range information
-function sir_fix_alot() {
+function sir_fix_alot(comments) {
     var loc = 0;
     var lineNumber = 0;
     var col = 0;
     var newlineTokens = ["{", "}", ";"];
+    var unprocessedComments = comments;
+    var comments = [];
 
     function copyOld(obj) {
 	//range
@@ -77,10 +90,52 @@ function sir_fix_alot() {
 	obj.token.old_lineStart = obj.token.lineStart;
     }
 
-    //Takes in a token and modifies its line number/col and range information
-    return function (obj) {
+    var lastOldLine = -1;
+    var lastOldCol = 0;
+    var lastOldRangeEnd = 0;
+
+    //Re-generate old lineStart information from range information.
+    // will maintain gaps in range (whitespace) & make the line
+    // numbers start @ 0.
+    // Currently broken. TODO.
+    function fixOldLineCol(obj){
+	if(obj.token.old_range === undefined
+	  || obj.token.value === undefined) return;
+	if(obj.token.old_lineNumber != lastOldLine){
+	    lastOldCol = 0;
+	    lastOldLine += 1;
+	}
+	
+	var d = 0;
+	if(lastOldRangeEnd != 0)
+	    d = obj.token.old_range[0] - lastOldRangeEnd;
+	
+	/*console.log("d is "+d);
+	console.log(lastOldCol);
+	console.log(lastOldRangeEnd);
+	console.log(obj);*/
+	if(d < 0){ /*console.log("d<0"); console.log(obj);*/  d = 0; }
+	
+	obj.token.old_lineStart = d + lastOldCol;
+	obj.token.old_lineNumber = lastOldLine;
+
+	lastOldCol      = obj.token.old_lineStart + obj.token.value.length;
+	//lastOldRangeEnd = obj.token.old_range[1];
+    }
+
+    //need this named now so we can call it on comments
+    function fixer (obj) {
 	copyOld(obj); //copys old information for mapping reasons
 
+	//See if a comment fits here - if it does, fix it appropriately.
+	if(unprocessedComments.length && 
+	   unprocessedComments[0].range[0] < obj.token.range[0]){
+	    var upc = unprocessedComments[0];
+	    upc.token = upc; //compatability for copyOld
+	    unprocessedComments = unprocessedComments.slice(1, unprocessedComments.length);
+	    fixer(upc);
+	    comments.push(upc);
+	}
 
 	//write new location information to token
 	obj.token.range[0] = loc;
@@ -99,8 +154,16 @@ function sir_fix_alot() {
 	    col = 0;
 	    lineNumber += 1;
 	}
-    };
 
+	//TODO:
+	//fixOldLineCol(obj);
+    }
+    return {
+	//Return comments from closure
+	retrieveComments : function() { return comments; }
+	//Takes in a token and modifies its line number/col and range information
+	, fixer : fixer
+    };
 }
 
 //this will hopefully turn the token array into the array format you want for convertSourceMap

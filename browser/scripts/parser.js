@@ -3652,8 +3652,11 @@ to decide on the correct name for identifiers.
         }
         
         
-        skipComment();
-        
+        //skipComment();
+        if(extra.comments){
+	    scanComment();
+	}
+	
         if(isIn(getChar(), delimiters)) {
             return readDelim();
         // } else if(getChar() === "#") {
@@ -3760,7 +3763,7 @@ to decide on the correct name for identifiers.
     
     
     // (Str) -> [...CSyntax]
-    function read(code) {
+    function read(code, options) {
         var token, tokenTree = [];
         
         source = code;
@@ -3778,6 +3781,31 @@ to decide on the correct name for identifiers.
             inSwitch: false
         };
         
+
+        extra = {};
+        if (typeof options !== 'undefined') {
+            if(options.range || options.loc) {
+                assert(false, "Note range and loc is not currently implemented");
+            }
+            extra.range = (typeof options.range === 'boolean') && options.range;
+            extra.loc = (typeof options.loc === 'boolean') && options.loc;
+            extra.raw = (typeof options.raw === 'boolean') && options.raw;
+            if (typeof options.tokens === 'boolean' && options.tokens) {
+                extra.tokens = [];
+            }
+            if (typeof options.comment === 'boolean' && options.comment) {
+                extra.comments = [];
+            }
+            if (typeof options.tolerant === 'boolean' && options.tolerant) {
+                extra.errors = [];
+            }
+            if(typeof options.noresolve === 'boolean' && options.noresolve) {
+                extra.noresolve = options.noresolve
+            } else {
+                extra.noresolve = false;
+            }
+        }
+
         
         while(index < length) {
             tokenTree.push(readLoop(tokenTree));
@@ -3793,7 +3821,9 @@ to decide on the correct name for identifiers.
             });
         }
         
-        return expander.tokensToSyntax(tokenTree);
+        var t = expander.tokensToSyntax(tokenTree);
+	t[t.length] = extra.comments;
+	return t;
     }
     
 
