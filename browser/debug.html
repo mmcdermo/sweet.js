@@ -7,18 +7,20 @@
       
   macro def {
     case $name:ident $params $body => {
-      function $name $params $body    //A comment
+      function $name $params $body    //Comment inside macro
     }
   }
 
-  /* First line block comment */
+  /* Pre fun block comment */
   def sweet(a) {
-    console.log("Macros are sweet!"); //Inside def comment
+    console.log("Macros are sweet!"); 
+  //Comment inside fun
   }
 
-  //Line Comment
-  def sweet1(a) { //Hello!
-    console.log("Macros are sweet!"); /* Block Comment */
+  //Pre fun Line Comment
+  def sweet1(a) { //Inside fun Hello!
+    console.log("Macros are sweet!"); /* Inside fun Block Comment */
+  //Comment inside fun
   }
 
 

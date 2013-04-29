@@ -1,12 +1,4 @@
-Object.prototype.clone = function() {
-  var newObj = (this instanceof Array) ? [] : {};
-  for (i in this) {
-    if (i == 'clone') continue;
-    if (this[i] && typeof this[i] == "object") {
-      newObj[i] = this[i].clone();
-    } else newObj[i] = this[i]
-  } return newObj;
-};
+
 requirejs.config({
     shim: {
         'underscore': {
@@ -18,6 +10,16 @@ requirejs.config({
 require(["sweet", "./escodegen", "./parser", "./expander"
 	 , "./source-map/source-map-generator"
 	 , "./source-map/source-map-consumer"], function(sweet, codegen, parser, expander, sourceMapG, sourceMapC) {
+	     Object.prototype.clone = function() {
+		 var newObj = (this instanceof Array) ? [] : {};
+		 for (i in this) {
+		     if (i == 'clone') continue;
+		     if (this[i] && typeof this[i] == "object") {
+			 newObj[i] = this[i].clone();
+		     } else newObj[i] = this[i]
+		 } return newObj;
+	     };
+
     var read = parser.read;
     var parse = parser.parse;
     var expand = expander.expand;
@@ -40,8 +42,9 @@ require(["sweet", "./escodegen", "./parser", "./expander"
 	readRes = readRes.splice(0, readRes.length - 1);
 
 	console.log("Comments: ");
-	console.log(comments);
-	console.log(readRes);
+	console.log(comments.clone());
+	console.log(readRes.clone());
+	console.log(expand(readRes));
         var res = expand(readRes);
         // var result = expander.enforest(parser.read(code));
         // var result = expander.expandf(parser.read(code));
@@ -52,9 +55,10 @@ require(["sweet", "./escodegen", "./parser", "./expander"
 	console.log(res);
 
 	var fix = sir_fix_alot(comments);
-	var fix2 = sir_fix_alot(comments);
 	res.map(fix.fixer);
 
+	console.log("Fixed: ");
+	console.log(res);
 	console.log("Comments: ");
 	console.log(fix.retrieveComments());
 
@@ -158,7 +162,7 @@ function sir_fix_alot(comments) {
 	copyOld(obj); //copys old information for mapping reasons
 
 	//See if a comment fits here - if it does, fix it appropriately.
-	if(unprocessedComments.length && obj.token.old_range !== undefined
+	while(unprocessedComments.length && obj.token.old_range !== undefined
 	   && unprocessedComments[0].range[0] < obj.token.old_range[0]){
 	    var upc = unprocessedComments[0];
 	    upc.token = upc.clone(); //compatability for copyOld
