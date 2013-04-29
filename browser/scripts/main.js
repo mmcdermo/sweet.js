@@ -1,3 +1,12 @@
+/*Object.prototype.clone = function() {
+  var newObj = (this instanceof Array) ? [] : {};
+  for (i in this) {
+    if (i == 'clone') continue;
+    if (this[i] && typeof this[i] == "object") {
+      newObj[i] = this[i].clone();
+    } else newObj[i] = this[i]
+  } return newObj;
+};*/
 requirejs.config({
     shim: {
         'underscore': {
@@ -6,10 +15,11 @@ requirejs.config({
     }
 });
 
-require(["sweet","./parser", "./expander"
+require(["sweet", "escodegen", "./parser", "./expander"
 	 , "./source-map/source-map-generator"
-	 , "./source-map/source-map-consumer"], function(sweet, parser, expander, sourceMapG, sourceMapC) {
+	 , "./source-map/source-map-consumer"], function(sweet, codegen, parser, expander, sourceMapG, sourceMapC) {
     var read = parser.read;
+    var parse = parser.parse;
     var expand = expander.expand;
     var flatten = expander.flatten;
 
@@ -31,6 +41,7 @@ require(["sweet","./parser", "./expander"
 
 	console.log("Comments: ");
 	console.log(comments);
+	console.log(readRes);
         var res = expand(readRes);
         // var result = expander.enforest(parser.read(code));
         // var result = expander.expandf(parser.read(code));
@@ -39,6 +50,7 @@ require(["sweet","./parser", "./expander"
 //	res.map(printSyntax);
 
 	console.log(res);
+
 	var fix = sir_fix_alot(comments);
 	res.map(fix.fixer);
 
@@ -60,6 +72,15 @@ require(["sweet","./parser", "./expander"
 	console.log(b);
 
         document.getElementById("out").innerHTML = res.join("\n");
+	
+	var parsed = parse(res, undefined, {tokens: true, range: true});
+
+	//This currently causes a maximum call depth exceeded.
+	// possibly because the comments have incorrect range info given the
+	// newly generated JS.
+	//var tree = codegen.attachComments(parsed, comments, parsed.tokens);
+        document.getElementById("out").innerHTML = codegen.generate(parsed
+							    , {comment: true});
     };
 });
 
@@ -81,7 +102,7 @@ function sir_fix_alot(comments) {
 	else {
 	    obj.token.old_range = obj.token.range.slice();
 	}
-	obj.token.range = new Array(2); //this is super dumb and we should just fix the root problem
+	obj.token.range = [0,0]; //this is super dumb and we should just fix the root problem
 	
 	//line number
 	obj.token.old_lineNumber = obj.token.lineNumber;
@@ -114,13 +135,12 @@ function sir_fix_alot(comments) {
 	console.log(lastOldCol);
 	console.log(lastOldRangeEnd);
 	console.log(obj);*/
-	if(d < 0){ /*console.log("d<0"); console.log(obj);*/  d = 0; }
-	
-	obj.token.old_lineStart = d + lastOldCol;
+	obj.token.old_lineStart = Math.max(d,0) + lastOldCol;
 	obj.token.old_lineNumber = lastOldLine;
 
 	lastOldCol      = obj.token.old_lineStart + obj.token.value.length;
-	//lastOldRangeEnd = obj.token.old_range[1];
+	if(d < 0) lastOldRangeEnd = lastOldRangeEnd + obj.token.value.length;
+	else lastOldRangeEnd = obj.token.old_range[1];
     }
 
     //need this named now so we can call it on comments
@@ -128,15 +148,15 @@ function sir_fix_alot(comments) {
 	copyOld(obj); //copys old information for mapping reasons
 
 	//See if a comment fits here - if it does, fix it appropriately.
-	if(unprocessedComments.length && 
-	   unprocessedComments[0].range[0] < obj.token.range[0]){
+	if(unprocessedComments.length && obj.token.old_range !== undefined
+	   && unprocessedComments[0].range[0] < obj.token.old_range[0]){
 	    var upc = unprocessedComments[0];
 	    upc.token = upc; //compatability for copyOld
 	    unprocessedComments = unprocessedComments.slice(1, unprocessedComments.length);
 	    fixer(upc);
 	    comments.push(upc);
 	}
-
+	
 	//write new location information to token
 	obj.token.range[0] = loc;
 	obj.token.lineStart = col;
@@ -155,12 +175,20 @@ function sir_fix_alot(comments) {
 	    lineNumber += 1;
 	}
 
-	//TODO:
-	//fixOldLineCol(obj);
+	fixOldLineCol(obj);
     }
     return {
 	//Return comments from closure
-	retrieveComments : function() { return comments; }
+	retrieveComments : function() { 
+	    if(unprocessedComments.length){ //Comments from end of file
+		unprocessedComments.map(function(obj){
+		    obj.token = obj; //compatability for copyOld
+		    fixer(obj);
+		    comments.push(obj);
+		});
+	    }
+	    return comments;
+	}
 	//Takes in a token and modifies its line number/col and range information
 	, fixer : fixer
     };
