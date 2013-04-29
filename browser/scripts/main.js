@@ -1,4 +1,4 @@
-/*Object.prototype.clone = function() {
+Object.prototype.clone = function() {
   var newObj = (this instanceof Array) ? [] : {};
   for (i in this) {
     if (i == 'clone') continue;
@@ -6,7 +6,7 @@
       newObj[i] = this[i].clone();
     } else newObj[i] = this[i]
   } return newObj;
-};*/
+};
 requirejs.config({
     shim: {
         'underscore': {
@@ -15,7 +15,7 @@ requirejs.config({
     }
 });
 
-require(["sweet", "escodegen", "./parser", "./expander"
+require(["sweet", "./escodegen", "./parser", "./expander"
 	 , "./source-map/source-map-generator"
 	 , "./source-map/source-map-consumer"], function(sweet, codegen, parser, expander, sourceMapG, sourceMapC) {
     var read = parser.read;
@@ -52,6 +52,7 @@ require(["sweet", "escodegen", "./parser", "./expander"
 	console.log(res);
 
 	var fix = sir_fix_alot(comments);
+	var fix2 = sir_fix_alot(comments);
 	res.map(fix.fixer);
 
 	console.log("Comments: ");
@@ -73,13 +74,19 @@ require(["sweet", "escodegen", "./parser", "./expander"
 
         document.getElementById("out").innerHTML = res.join("\n");
 	
+	//Note that this is incorrect - as there currently isn't space
+	//  inside the esprima generated parse tree for the comments.
 	var parsed = parse(res, undefined, {tokens: true, range: true});
 
-	//This currently causes a maximum call depth exceeded.
-	// possibly because the comments have incorrect range info given the
-	// newly generated JS.
-	//var tree = codegen.attachComments(parsed, comments, parsed.tokens);
-        document.getElementById("out").innerHTML = codegen.generate(parsed
+	//attachComments needs a slightly different format than parsed produces
+	parsed.tokens.map(function(obj){
+	    for(o in obj.token){
+		obj[o] = obj.token[o];
+	    }
+	});
+
+	var tree = codegen.attachComments(parsed, comments, parsed.tokens);
+        document.getElementById("out").innerHTML = codegen.generate(tree
 							    , {comment: true});
     };
 });
@@ -151,7 +158,7 @@ function sir_fix_alot(comments) {
 	if(unprocessedComments.length && obj.token.old_range !== undefined
 	   && unprocessedComments[0].range[0] < obj.token.old_range[0]){
 	    var upc = unprocessedComments[0];
-	    upc.token = upc; //compatability for copyOld
+	    upc.token = upc.clone(); //compatability for copyOld
 	    unprocessedComments = unprocessedComments.slice(1, unprocessedComments.length);
 	    fixer(upc);
 	    comments.push(upc);
@@ -182,7 +189,7 @@ function sir_fix_alot(comments) {
 	retrieveComments : function() { 
 	    if(unprocessedComments.length){ //Comments from end of file
 		unprocessedComments.map(function(obj){
-		    obj.token = obj; //compatability for copyOld
+		    obj.token = obj.clone(); //compatability for copyOld
 		    fixer(obj);
 		    comments.push(obj);
 		});
