@@ -74,10 +74,13 @@ require(["sweet", "./escodegen", "./parser", "./expander"
 
         document.getElementById("out").innerHTML = res.join("\n");
 	
-	//Note that this is incorrect - as there currently isn't space
-	//  inside the esprima generated parse tree for the comments.
+	//Note that this is incorrect - as things don't /quite/ line up
+	// correctly.
 	var parsed = parse(res, undefined, {tokens: true, range: true});
 
+	console.log(parsed);
+	console.log(comments);
+	
 	//attachComments needs a slightly different format than parsed produces
 	parsed.tokens.map(function(obj){
 	    for(o in obj.token){
@@ -161,6 +164,7 @@ function sir_fix_alot(comments) {
 	    upc.token = upc.clone(); //compatability for copyOld
 	    unprocessedComments = unprocessedComments.slice(1, unprocessedComments.length);
 	    fixer(upc);
+	    upc.range = upc.token.range;
 	    comments.push(upc);
 	}
 	
