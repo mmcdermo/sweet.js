@@ -7,9 +7,11 @@ requirejs.config({
     }
 });
 
-require(["sweet", "./escodegen", "./parser", "./expander"
+require(["sweet", "./fix", "./escodegen", "./parser", "./expander"
 	 , "./source-map/source-map-generator"
-	 , "./source-map/source-map-consumer"], function(sweet, codegen, parser, expander, sourceMapG, sourceMapC) {
+	 , "./source-map/source-map-consumer"]
+	, function(sweet, fixer_, codegen, parser, expander, sourceMapG, sourceMapC) {
+	    
 	     Object.prototype.clone = function() {
 		 var newObj = (this instanceof Array) ? [] : {};
 		 for (i in this) {
@@ -24,6 +26,7 @@ require(["sweet", "./escodegen", "./parser", "./expander"
     var parse = parser.parse;
     var expand = expander.expand;
     var flatten = expander.flatten;
+    var fixer = fixer;
 
     window.read = parser.read;
     window.expand = expander.expand;
@@ -36,15 +39,11 @@ require(["sweet", "./escodegen", "./parser", "./expander"
 
         var code = document.getElementById("sweetjs").text;
         // var res = sweet.compile(code);
-
+	
 	var readRes = read(code, {comment: true});
 	var comments = readRes[readRes.length - 1];
 	readRes = readRes.splice(0, readRes.length - 1);
-
-	console.log("Comments: ");
-	console.log(comments.clone());
-	console.log(readRes.clone());
-	console.log(expand(readRes));
+	
         var res = expand(readRes);
         // var result = expander.enforest(parser.read(code));
         // var result = expander.expandf(parser.read(code));
@@ -52,35 +51,20 @@ require(["sweet", "./escodegen", "./parser", "./expander"
 
 //	res.map(printSyntax);
 
-	console.log(res);
-
-	var fix = sir_fix_alot(comments);
+	var fix = fixer_.fixer(comments);
 	res.map(fix.fixer);
 
-	console.log("Fixed: ");
-	console.log(res);
-	console.log("Comments: ");
-	console.log(fix.retrieveComments());
+	//var almost_a_src_map = tokensToMappings(res);
+	
+	//var z = convertSourceMap(sourceMapG.SourceMapGenerator, "aFileName.sjs", almost_a_src_map);
+	
+	//var b = composeSourceMaps(sourceMapG.SourceMapGenerator
+	//			  ,sourceMapC.SourceMapConsumer
+	//			  , z, z);
 
-	var almost_a_src_map = tokensToMappings(res);
-	console.log("Almost");
-	console.log(almost_a_src_map);
+            //document.getElementById("out").innerHTML = res.join("\n");
 	
-	var z = convertSourceMap(sourceMapG.SourceMapGenerator, "aFileName.sjs", almost_a_src_map);
-	console.log("Converted");
-	console.log(z);
-	
-	var b = composeSourceMaps(sourceMapG.SourceMapGenerator
-				  ,sourceMapC.SourceMapConsumer
-				  , z, z);
-	console.log("Composed");
-	console.log(b);
-
-        document.getElementById("out").innerHTML = res.join("\n");
-	
-	//Note that this is incorrect - as things don't /quite/ line up
-	// correctly.
-	var parsed = parse(res, undefined, {tokens: true, range: true});
+	var parsed = parse(res, undefined, {tokens: true, range: true}, comments);
 
 	console.log(parsed);
 	console.log(comments);

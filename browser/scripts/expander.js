@@ -1090,9 +1090,27 @@
                     // pull the macro transformer out the environment
                     var transformer = env.get(head.token.value);
                     // apply the transformer
+		    console.log("Head");
+		    console.log(head.token);
                     var rt = transformer(rest, head, env);
+		    console.log("RT");
+		    console.log(rt);
 
-                    return step(rt.result[0], rt.result.slice(1).concat(rt.rest));
+		    //recursively update range of result to that of the call site
+		    function rUpdateRange(tok, range){
+			var t = tok;
+			t.range = range;
+			if(t.hasOwnProperty("inner"))
+			    for(o in t.inner)
+				t.inner[o] = rUpdateRange(t.inner[o], range);
+			return t;
+		    }
+		    rt = rUpdateRange(rt, head.token.range);
+
+		    console.log("RT");
+		    console.log(rt);
+		    var r = step(rt.result[0], rt.result.slice(1).concat(rt.rest));
+		    return r;
                 // identifier
                 } else if(head.token.type === parser.Token.Identifier) {
                     return step(Id.create(head), rest);

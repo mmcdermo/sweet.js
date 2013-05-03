@@ -57,7 +57,7 @@ to decide on the correct name for identifiers.
 (function (root, factory) {
     if (typeof exports === 'object') {
         // CommonJS
-        factory(exports, require('./expander'));
+        factory(exports, require('./expander'), require('./fix'));
     } else if (typeof define === 'function' && define.amd) {
         // AMD. Register as an anonymous module.
         define(['exports', 'expander'], factory);
@@ -65,7 +65,7 @@ to decide on the correct name for identifiers.
         // Browser globals
         factory((root.parser = {}), root.expander);
     }
-}(this, function (exports, expander) {
+}(this, function (exports, expander, fixer) {
     'use strict';
 
     var Token,
@@ -3784,9 +3784,9 @@ to decide on the correct name for identifiers.
 
         extra = {};
         if (typeof options !== 'undefined') {
-            if(options.range || options.loc) {
+            /*if(options.range || options.loc) {
                 assert(false, "Note range and loc is not currently implemented");
-            }
+            }*/
             extra.range = (typeof options.range === 'boolean') && options.range;
             extra.loc = (typeof options.loc === 'boolean') && options.loc;
             extra.raw = (typeof options.raw === 'boolean') && options.raw;
@@ -3828,8 +3828,9 @@ to decide on the correct name for identifiers.
     
 
     // (SyntaxObject, Str, {}) -> SyntaxObject
-    function parse(code, nodeType, options) {
+    function parse(code, nodeType, options, comments) {
         var program, toString;
+	var comments = comments || [];
 
         tokenStream = code;
         nodeType = nodeType || "base";
@@ -3847,9 +3848,9 @@ to decide on the correct name for identifiers.
 
         extra = {};
         if (typeof options !== 'undefined') {
-            if(options.range || options.loc) {
+            /*if(options.range || options.loc) {
                 assert(false, "Note range and loc is not currently implemented");
-            }
+            }*/
             extra.range = (typeof options.range === 'boolean') && options.range;
             extra.loc = (typeof options.loc === 'boolean') && options.loc;
             extra.raw = (typeof options.raw === 'boolean') && options.raw;
@@ -3931,7 +3932,11 @@ to decide on the correct name for identifiers.
             unpatch();
             extra = {};
         }
-
+	
+	//fix program.tokens with fixer
+	//var fix = fixer.fixer(comments); //this is clear
+	//program.tokens.map( fix.fixer );
+	
         return program;
     }
     
