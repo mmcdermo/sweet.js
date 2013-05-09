@@ -4,16 +4,24 @@ var fs = require("fs");
 var Mocha = require("mocha");
 
 target.all = function() {
+    echo("1");
     target.clean();
+    echo("2");
     target.build();
+    echo("3");
     target.build_test_file();
+    echo("4");
     target.build_test();
+    echo("5");
     target.build_browser();
+    echo("6");
     target.test();
 };
 
 target.clean = function() {
-    rm("build/*");
+    if(test('-d', 'build/')) {
+	rm("build/*");
+    }
 };
 
 target.single = function() {
