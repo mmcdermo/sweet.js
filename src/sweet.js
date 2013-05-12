@@ -30,8 +30,9 @@
         var expander = require("./expander");
 	var fix = require("./fix");
         var codegen = require("escodegen");
+	var sourceMap = require("source-map")
 
-        factory(exports, parser, expander, fix, codegen);
+        factory(exports, parser, expander, fix, codegen, sourceMap);
 
         // Alow require('./example') for an example.sjs file.
         require.extensions['.sjs'] = function(module, filename) {
@@ -40,12 +41,12 @@
         };
     } else if (typeof define === 'function' && define.amd) {
         // AMD. Register as an anonymous module.
-        define(['exports', './parser', './expander', './fix', './escodegen'], factory);
+        define(['exports', './parser', './expander', './fix', './escodegen', 'source-map'], factory);
     } else {
         // Browser globals
-        factory((root.sweet = {}), root.parser, root.expander, root.fix, root.codegen);
+        factory((root.sweet = {}), root.parser, root.expander, root.fix, root.codegen, root.sourceMap);
     }
-}(this, function (exports, parser, expander, fix, codegen) {
+}(this, function (exports, parser, expander, fix, codegen, sourceMap) {
 
     // (Str, {}) -> AST
     exports.parse = function parse(code, options) {
@@ -86,8 +87,21 @@
 	var sourceMap0 = fix.tokensToMappings(expanded);
 	
 	var ast = parser.parse(expanded, undefined, {tokens: true, range: true}, comments);
-	ast = codegen.attachComments(ast, comments, ast.tokens);
 	
+	ast = codegen.attachComments(ast, comments, ast.tokens);
+
+	/** Some magic with sourcemaps goes here **/
+	/*var map1 = fix.convertSourceMap(sourceMap.SourceMapGenerator
+				    , "aFileName.sjs"
+				    , sourceMap0);
+	var map2 = fix.convertSourceMap(sourceMap.SourceMapGenerator
+				    , "aFileName.sjs"
+				    , ast.sourceMap);
+
+	var m1g = new sourceMap.SourceMapGenerator(new sourceMap.SourceMapConsumer(map1));
+	var composed = m1g.applySourceMap(new sourceMap.SourceMapConsumer(map1));
+	ast.sourceMap = composed;*/
+
         return ast;
     };
     
