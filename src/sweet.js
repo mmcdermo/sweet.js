@@ -74,10 +74,20 @@
             }
         }
 
-        var readTree = parser.read(source);
-        var expanded = expander.expand(readTree); 
+        var readTree = parser.read(source, {comment: true});
+	var comments = readTree[readTree.length - 1];
+        var expanded = expander.expand(readTree.splice(0, readTree.length - 1)); 
         // var flattened = expander.flatten(expanded);
-        var ast = parser.parse(fix.fixer(expanded));
+
+	var fixer = fix.fixer(comments);
+	expanded.map(fixer.fixer);
+
+	//store first source mapping for later
+	var sourceMap0 = fix.tokensToMappings(expanded);
+	
+	var ast = parser.parse(expanded, undefined, {tokens: true, range: true}, comments);
+	ast = codegen.attachComments(ast, comments, ast.tokens);
+	
         return ast;
     };
     
