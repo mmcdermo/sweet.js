@@ -28,9 +28,10 @@
         // CommonJS
         var parser = require("./parser");
         var expander = require("./expander");
+	var fix = require("./fix");
         var codegen = require("escodegen");
 
-        factory(exports, parser, expander, codegen);
+        factory(exports, parser, expander, fix, codegen);
 
         // Alow require('./example') for an example.sjs file.
         require.extensions['.sjs'] = function(module, filename) {
@@ -39,12 +40,12 @@
         };
     } else if (typeof define === 'function' && define.amd) {
         // AMD. Register as an anonymous module.
-        define(['exports', './parser', './expander', './escodegen'], factory);
+        define(['exports', './parser', './expander', './fix', './escodegen'], factory);
     } else {
         // Browser globals
-        factory((root.sweet = {}), root.parser, root.expander, root.codegen);
+        factory((root.sweet = {}), root.parser, root.expander, root.fix, root.codegen);
     }
-}(this, function (exports, parser, expander, codegen) {
+}(this, function (exports, parser, expander, fix, codegen) {
 
     // (Str, {}) -> AST
     exports.parse = function parse(code, options) {
@@ -76,7 +77,7 @@
         var readTree = parser.read(source);
         var expanded = expander.expand(readTree); 
         // var flattened = expander.flatten(expanded);
-        var ast = parser.parse(expanded);
+        var ast = parser.parse(fix.fixer(expanded));
         return ast;
     };
     
