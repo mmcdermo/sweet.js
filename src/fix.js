@@ -137,8 +137,14 @@
 	return objs.map(function(obj) {
 	    var oc = [0,0];
 	    var nc = [0,0];
-	    if(obj.token.value !== undefined && obj.token.value !== null){
-		if(obj.token.old_lineStart !== undefined){
+	    if(obj.token.value !== undefined && obj.token.value !== null
+	       && obj.token.value.length !== undefined
+	       && obj.token.lineStart !== undefined 
+	       && obj.token.lineStart){
+		if(obj.token.old_lineStart !== undefined 
+		   && obj.token.old_lineStart !== null
+		   && !isNaN(obj.token.old_lineStart)
+		   && obj.token.value.length !== undefined){
 		    oc = [obj.token.old_lineStart
 			  , obj.token.old_lineStart + obj.token.value.length]
 		}
@@ -176,8 +182,8 @@
 		return z;
 	    }
 	    else { 
-		console.log("Undefined orig info");
-		console.log(obj);
+		/*console.log("Undefined orig info");
+		console.log(obj);*/
 		return undefined; 
 	    }
 	});

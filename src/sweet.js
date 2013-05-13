@@ -91,21 +91,33 @@
 	ast = codegen.attachComments(ast, comments, ast.tokens);
 
 	/** Some magic with sourcemaps goes here **/
-	/*var map1 = fix.convertSourceMap(sourceMap.SourceMapGenerator
+	var map1 = fix.convertSourceMap(sourceMap.SourceMapGenerator
 				    , "aFileName.sjs"
 				    , sourceMap0);
 	var map2 = fix.convertSourceMap(sourceMap.SourceMapGenerator
 				    , "aFileName.sjs"
 				    , ast.sourceMap);
 
-	var m1g = new sourceMap.SourceMapGenerator(new sourceMap.SourceMapConsumer(map1));
-	var composed = m1g.applySourceMap(new sourceMap.SourceMapConsumer(map1));
-	ast.sourceMap = composed;*/
+	var m1g = sourceMap.SourceMapGenerator.fromSourceMap(new sourceMap.SourceMapConsumer(map1));
+	sourceMap.SourceMapGenerator.prototype.applySourceMap.call(m1g, new sourceMap.SourceMapConsumer(map1));
+	ast.sourceMap = m1g;
 
         return ast;
     };
     
     exports.compile = function compile(code, options) {
-      return codegen.generate(exports.parse(code, options));
+	var p = exports.parse(code, options);
+	if(options !== undefined && options.sourceMap !== undefined){
+	    var g = codegen.generate(p,{comment: true
+					,sourceMap: options.sourceMap
+					,sourceMapWithCode: true});
+
+	    var c = new sourceMap.SourceMapConsumer(g.map.toJSON());
+	    //sourceMap.SourceMapGenerator.prototype.applySourceMap.call(
+	    //p.sourceMap, new sourceMap.SourceMapConsumer(g.map));
+	    g.map = p.sourceMap.toJSON();
+	    return g;
+	}
+	else return codegen.generate(p);
     }
 }));
