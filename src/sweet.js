@@ -86,7 +86,7 @@
 	//store first source mapping for later
 	var sourceMap0 = fix.tokensToMappings(expanded);
 	
-	var ast = parser.parse(expanded, undefined, {tokens: true, range: true}, comments);
+	var ast = parser.parse(expanded, undefined, {tokens: true, range: true, loc: true}, comments);
 	
 	ast = codegen.attachComments(ast, comments, ast.tokens);
 
@@ -107,25 +107,34 @@
     
     exports.compile = function compile(code, options) {
 
-	//Minimal example of escodegen creating an empty map when it shouldn't
-	// this example doesn't even use our read or parse or anything, so it must be
-	// some problem with the options we're passing alone.
+
+	//Working example of escodegen generating a sourcemap
 	var esp = require("esprima");
-	var z = "var a = 5; var b = 10; console.log(a+b);"
-	var ast = esp.parse(z, undefined, {comment: true, tokens: true, range: true, loc:true});
-	console.log(ast);
+	var z = "var a = 5; var b = 10; /* acomment */ console.log(a+b);"
+	var ast = esp.parse(z, {comment: true
+				, tokens: true
+				, range: true
+				, loc:true});
+	/*ast.tokens.map(function(o){
+	    console.log(o)
+	    console.log(o.loc)});*/
+	//console.log(ast.tokens);
 	var g = codegen.generate(ast, {comment: true
 				       ,sourceMap: "testfile.js"
+				       ,sourceMapRoot :"./"
 				       ,sourceMapWithCode: true});
-	console.log(g);
-	//End minimal example
+	//console.log(g);
+	//End example
 	
 	var p = exports.parse(code, options);
+	//p.tokens.map(function(o){ console.log(o.loc)});
 	if(options !== undefined && options.sourceMap !== undefined){
+	    console.log("ABCD");
 	    var g = codegen.generate(p,{comment: true
 					,sourceMap: options.sourceMap
 					,sourceMapWithCode: true});
-
+	    console.log("Yarrr");
+	    console.log(g);
 	    var c = new sourceMap.SourceMapConsumer(g.map.toJSON());
 	    //sourceMap.SourceMapGenerator.prototype.applySourceMap.call(
 	    //p.sourceMap, new sourceMap.SourceMapConsumer(g.map));

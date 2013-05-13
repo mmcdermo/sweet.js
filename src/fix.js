@@ -68,10 +68,6 @@
 	    if(lastOldRangeEnd != 0)
 		d = obj.token.old_range[0] - lastOldRangeEnd;
 	    
-	    /*console.log("d is "+d);
-	      console.log(lastOldCol);
-	      console.log(lastOldRangeEnd);
-	      console.log(obj);*/
 	    obj.token.old_lineStart = Math.max(d,0) + lastOldCol;
 	    obj.token.old_lineNumber = lastOldLine;
 
@@ -79,7 +75,7 @@
 	    if(d < 0) lastOldRangeEnd = lastOldRangeEnd + obj.token.value.length;
 	    else lastOldRangeEnd = obj.token.old_range[1];
 	}
-
+	
 	//need this named now so we can call it on comments
 	function fixer (obj) {
 	    copyOld(obj); //copys old information for mapping reasons
@@ -114,6 +110,17 @@
 	    }
 
 	    fixOldLineCol(obj);
+
+	    //Fix obj.token.loc
+	    if (obj.token.value !== undefined && obj.token.value !== null
+	       && obj.token.value.length !== undefined) {
+		obj.loc = {
+		    start : { line: obj.token.lineNumber + 1
+			      , column: obj.token.lineStart }
+		    ,end : { line: obj.token.lineNumber + 1
+			     , column: obj.token.lineStart + obj.token.value.length }
+		}
+	    }
 	}
 	return {
 	    //Return comments from closure
