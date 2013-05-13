@@ -57,7 +57,7 @@ to decide on the correct name for identifiers.
 (function (root, factory) {
     if (typeof exports === 'object') {
         // CommonJS
-        factory(exports, require('./expander'), require('./fix'));
+        factory(exports, require('./expander'));
     } else if (typeof define === 'function' && define.amd) {
         // AMD. Register as an anonymous module.
         define(['exports', 'expander'], factory);
@@ -65,7 +65,7 @@ to decide on the correct name for identifiers.
         // Browser globals
         factory((root.parser = {}), root.expander);
     }
-}(this, function (exports, expander, fixer) {
+}(this, function (exports, expander) {
     'use strict';
 
     var Token,
@@ -3218,7 +3218,7 @@ to decide on the correct name for identifiers.
 
         while (index < length) {
             ch = source[index];
-	    console.log(index);
+
             if (lineComment) {
                 ch = nextChar();
                 if (index >= length) {
@@ -3395,19 +3395,19 @@ to decide on the correct name for identifiers.
                     node.range = [node.left.range[0], node.right.range[1]];
                 }
                 if (loc && typeof node.loc === 'undefined') {
-                    /*node.loc = {
+                    node.loc = {
                         start: node.left.loc.start,
                         end: node.right.loc.end
-                    };*/
+                    };
                 }
             }
 
             return function () {
                 var node, rangeInfo, locInfo;
 
-                //skipComment();
-
-		var curr = tokenStream[index].token;
+                // skipComment();
+                
+                var curr = tokenStream[index].token;
                 
                 rangeInfo = [curr.range[0], 0];
                 locInfo = {
@@ -3418,7 +3418,6 @@ to decide on the correct name for identifiers.
                 };
 
                 node = parseFunction.apply(null, arguments);
-
                 if (typeof node !== 'undefined') {
                     var last = tokenStream[index].token;
 
@@ -3432,7 +3431,7 @@ to decide on the correct name for identifiers.
                             line: last.lineNumber,
                             column: last.lineStart
                         };
-                        //node.loc = locInfo;
+                        node.loc = locInfo;
                     }
 
                     if (isBinary(node)) {
@@ -3652,13 +3651,9 @@ to decide on the correct name for identifiers.
             return toks[idx];
         }
         
-	skipComment();
-	/*
-        if(extra.comments){
-	  scanComment();
-	}
-	else skipComment();*/
-	
+        
+        skipComment();
+        
         if(isIn(getChar(), delimiters)) {
             return readDelim();
         // } else if(getChar() === "#") {
@@ -3736,6 +3731,8 @@ to decide on the correct name for identifiers.
             token = readLoop(inner, (startDelim.value === "(" || startDelim.value === "["));
             if((token.type === Token.Punctuator) && (token.value === matchDelim[startDelim.value])) {
                 break;
+            } else if(token.type === Token.EOF) {
+                throwError({}, Messages.UnexpectedEOS);
             } else {
                 inner.push(token);
             }
@@ -3765,7 +3762,7 @@ to decide on the correct name for identifiers.
     
     
     // (Str) -> [...CSyntax]
-    function read(code, options) {
+    function read(code) {
         var token, tokenTree = [];
         
         source = code;
@@ -3783,12 +3780,48 @@ to decide on the correct name for identifiers.
             inSwitch: false
         };
         
+        
+        while(index < length) {
+            tokenTree.push(readLoop(tokenTree));
+        }
+        var last = tokenTree[tokenTree.length-1];
+        if(last && last.type !== Token.EOF) {
+            tokenTree.push({
+                type: Token.EOF,
+                value: "",
+                lineNumber: last.lineNumber,
+                lineStart: last.lineStart,
+                range: [index, index]
+            });
+        }
+        
+        return expander.tokensToSyntax(tokenTree);
+    }
+    
+
+    // (SyntaxObject, Str, {}) -> SyntaxObject
+    function parse(code, nodeType, options) {
+        var program, toString;
+
+        tokenStream = code;
+        nodeType = nodeType || "base";
+        index = 0;
+        length = tokenStream.length;
+        buffer = null;
+        state = {
+            allowIn: true,
+            labelSet: {},
+            lastParenthesized: null,
+            inFunctionBody: false,
+            inIteration: false,
+            inSwitch: false
+        };
 
         extra = {};
         if (typeof options !== 'undefined') {
-            /*if(options.range || options.loc) {
+            if(options.range || options.loc) {
                 assert(false, "Note range and loc is not currently implemented");
-            }*/
+            }
             extra.range = (typeof options.range === 'boolean') && options.range;
             extra.loc = (typeof options.loc === 'boolean') && options.loc;
             extra.raw = (typeof options.raw === 'boolean') && options.raw;
@@ -3806,70 +3839,6 @@ to decide on the correct name for identifiers.
             } else {
                 extra.noresolve = false;
             }
-        }
-
-        
-        while(index < length) {
-            tokenTree.push(readLoop(tokenTree));
-        }
-        var last = tokenTree[tokenTree.length-1];
-        if(last && last.type !== Token.EOF) {
-            tokenTree.push({
-                type: Token.EOF,
-                value: "",
-                lineNumber: last.lineNumber,
-                lineStart: last.lineStart,
-                range: [index, index]
-            });
-        }
-        
-        var t = expander.tokensToSyntax(tokenTree);
-	if(Object.prototype.hasOwnProperty.call(extra, "comments"))
-	    t[t.length] = extra.comments;
-	return t;
-    }
-    
-
-    // (SyntaxObject, Str, {}) -> SyntaxObject
-    function parse(code, nodeType, options, comments) {
-        var program, toString;
-	var comments = comments || [];
-
-        tokenStream = code;
-        nodeType = nodeType || "base";
-        index = 0;
-        length = tokenStream.length;
-        buffer = null;
-        state = {
-            allowIn: true,
-            labelSet: {},
-            lastParenthesized: null,
-            inFunctionBody: false,
-            inIteration: false,
-            inSwitch: false
-        };
-
-        extra = {};
-	
-	if (typeof options === 'undefined'){
-	    options = { tokens: true, range: true }
-	}
-        extra.range = (typeof options.range === 'boolean') && options.range;
-        extra.loc = (typeof options.loc === 'boolean') && options.loc;
-        extra.raw = (typeof options.raw === 'boolean') && options.raw;
-        if (typeof options.tokens === 'boolean' && options.tokens) {
-            extra.tokens = [];
-        }
-        if (typeof options.comment === 'boolean' && options.comment) {
-            extra.comments = [];
-        }
-        if (typeof options.tolerant === 'boolean' && options.tolerant) {
-            extra.errors = [];
-        }
-        if(typeof options.noresolve === 'boolean' && options.noresolve) {
-            extra.noresolve = options.noresolve
-        } else {
-            extra.noresolve = false;
         }
         
         patch();
@@ -3934,13 +3903,6 @@ to decide on the correct name for identifiers.
             unpatch();
             extra = {};
         }
-	
-	//fix program.tokens with fixer and generate sourcemap
-	if(Object.prototype.hasOwnProperty.call(program, "tokens")){
-	    var fix = fixer.fixer(comments); //this is clear
-	    program.tokens.map( fix.fixer )
-	    program.sourceMap = fixer.tokensToMappings(program.tokens);
-	}
 
         return program;
     }

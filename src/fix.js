@@ -111,14 +111,17 @@
 
 	    fixOldLineCol(obj);
 
-	    //Fix obj.token.loc
-	    if (obj.token.value !== undefined && obj.token.value !== null
+	    //Fix obj.loc
+	    if (
+		obj.token.value !== undefined && obj.token.value !== null
 	       && obj.token.value.length !== undefined) {
+		var locLineStart = obj.token.lineStart;
+		if(isNaN(locLineStart)) locLineStart = 1;
 		obj.loc = {
 		    start : { line: obj.token.lineNumber + 1
-			      , column: obj.token.lineStart }
+			      , column: locLineStart }
 		    ,end : { line: obj.token.lineNumber + 1
-			     , column: obj.token.lineStart + obj.token.value.length }
+			     , column: locLineStart + obj.token.value.length }
 		}
 	    }
 	}

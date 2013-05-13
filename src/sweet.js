@@ -86,8 +86,8 @@
 	//store first source mapping for later
 	var sourceMap0 = fix.tokensToMappings(expanded);
 	
-	var ast = parser.parse(expanded, undefined, {tokens: true, range: true, loc: true}, comments);
-	
+	var ast = parser.parse(expanded, undefined, {tokens: true, range: true}, comments);
+	ast.loc = { start: {line : 1, column: 0}, end : {line: 1000, column: 0}};
 	ast = codegen.attachComments(ast, comments, ast.tokens);
 
 	/** Some magic with sourcemaps goes here **/
@@ -129,15 +129,13 @@
 	var p = exports.parse(code, options);
 	//p.tokens.map(function(o){ console.log(o.loc)});
 	if(options !== undefined && options.sourceMap !== undefined){
-	    console.log("ABCD");
 	    var g = codegen.generate(p,{comment: true
 					,sourceMap: options.sourceMap
 					,sourceMapWithCode: true});
-	    console.log("Yarrr");
-	    console.log(g);
+	    //console.log(g);
 	    var c = new sourceMap.SourceMapConsumer(g.map.toJSON());
-	    //sourceMap.SourceMapGenerator.prototype.applySourceMap.call(
-	    //p.sourceMap, new sourceMap.SourceMapConsumer(g.map));
+	    sourceMap.SourceMapGenerator.prototype.applySourceMap.call(
+		p.sourceMap, new sourceMap.SourceMapConsumer(g.map.toJSON()));
 	    g.map = p.sourceMap.toJSON();
 	    return g;
 	}
