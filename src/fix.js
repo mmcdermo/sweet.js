@@ -137,7 +137,7 @@
 	return objs.map(function(obj) {
 	    var oc = [0,0];
 	    var nc = [0,0];
-	    if(obj.token.value !== undefined){
+	    if(obj.token.value !== undefined && obj.token.value !== null){
 		if(obj.token.old_lineStart !== undefined){
 		    oc = [obj.token.old_lineStart
 			  , obj.token.old_lineStart + obj.token.value.length]
