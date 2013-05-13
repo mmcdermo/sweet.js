@@ -106,6 +106,20 @@
     };
     
     exports.compile = function compile(code, options) {
+
+	//Minimal example of escodegen creating an empty map when it shouldn't
+	// this example doesn't even use our read or parse or anything, so it must be
+	// some problem with the options we're passing alone.
+	var esp = require("esprima");
+	var z = "var a = 5; var b = 10; console.log(a+b);"
+	var ast = esp.parse(z, undefined, {comment: true, tokens: true, range: true, loc:true});
+	console.log(ast);
+	var g = codegen.generate(ast, {comment: true
+				       ,sourceMap: "testfile.js"
+				       ,sourceMapWithCode: true});
+	console.log(g);
+	//End minimal example
+	
 	var p = exports.parse(code, options);
 	if(options !== undefined && options.sourceMap !== undefined){
 	    var g = codegen.generate(p,{comment: true
