@@ -83,59 +83,40 @@
 	var fixer = fix.fixer(comments);
 	expanded.map(fixer.fixer);
 
-	//store first source mapping for later
 	var sourceMap0 = fix.tokensToMappings(expanded);
-	
 	var ast = parser.parse(expanded, undefined, {tokens: true, range: true}, comments);
-	ast.loc = { start: {line : 1, column: 0}, end : {line: 1000, column: 0}};
-	ast = codegen.attachComments(ast, comments, ast.tokens);
 
-	/** Some magic with sourcemaps goes here **/
-	var map1 = fix.convertSourceMap(sourceMap.SourceMapGenerator
-				    , "aFileName.sjs"
-				    , sourceMap0);
-	var map2 = fix.convertSourceMap(sourceMap.SourceMapGenerator
-				    , "aFileName.sjs"
-				    , ast.sourceMap);
-
-	var m1g = sourceMap.SourceMapGenerator.fromSourceMap(new sourceMap.SourceMapConsumer(map1));
-	sourceMap.SourceMapGenerator.prototype.applySourceMap.call(m1g, new sourceMap.SourceMapConsumer(map1));
-	ast.sourceMap = m1g;
+	if(options !== undefined && options.sourceMap !== undefined){
+	    ast.loc = { start: {line : 1, column: 0}, end : {line: 1000, column: 0}};
+	    ast = codegen.attachComments(ast, comments, ast.tokens);
+	    var map1 = fix.convertSourceMap(sourceMap.SourceMapGenerator
+					    , options.inFile
+					    , sourceMap0);
+	    var map2 = fix.convertSourceMap(sourceMap.SourceMapGenerator
+					    , options.inFile
+					    , ast.sourceMap);
+	    var m1g = sourceMap.SourceMapGenerator.fromSourceMap(
+		new sourceMap.SourceMapConsumer(map1));
+	    sourceMap.SourceMapGenerator.prototype.applySourceMap.call(
+		m1g, new sourceMap.SourceMapConsumer(map1));
+	    ast.sourceMap = m1g;
+	}
 
         return ast;
     };
     
     exports.compile = function compile(code, options) {
 
-
-	//Working example of escodegen generating a sourcemap
-	var esp = require("esprima");
-	var z = "var a = 5; var b = 10; /* acomment */ console.log(a+b);"
-	var ast = esp.parse(z, {comment: true
-				, tokens: true
-				, range: true
-				, loc:true});
-	/*ast.tokens.map(function(o){
-	    console.log(o)
-	    console.log(o.loc)});*/
-	//console.log(ast.tokens);
-	var g = codegen.generate(ast, {comment: true
-				       ,sourceMap: "testfile.js"
-				       ,sourceMapRoot :"./"
-				       ,sourceMapWithCode: true});
-	//console.log(g);
-	//End example
-	
 	var p = exports.parse(code, options);
-	//p.tokens.map(function(o){ console.log(o.loc)});
 	if(options !== undefined && options.sourceMap !== undefined){
 	    var g = codegen.generate(p,{comment: true
-					,sourceMap: options.sourceMap
+					,sourceMap: options.outFile
 					,sourceMapWithCode: true});
-	    //console.log(g);
 	    var c = new sourceMap.SourceMapConsumer(g.map.toJSON());
 	    sourceMap.SourceMapGenerator.prototype.applySourceMap.call(
-		p.sourceMap, new sourceMap.SourceMapConsumer(g.map.toJSON()));
+		p.sourceMap
+		, new sourceMap.SourceMapConsumer(g.map.toJSON())
+		, options.outFile);
 	    g.map = p.sourceMap.toJSON();
 	    return g;
 	}
