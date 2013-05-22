@@ -76,12 +76,20 @@
         }
 
         var readTree = parser.read(source, {comment: true});
+
+
+
 	var comments = readTree[readTree.length - 1];
         var expanded = expander.expand(readTree.splice(0, readTree.length - 1)); 
         // var flattened = expander.flatten(expanded);
 
 	var fixer = fix.fixer(comments);
 	expanded.map(fixer.fixer);
+
+	expanded.map(function(o){
+	    console.log(o);
+	    console.log("Mapping " + o.token.old_lineNumber + " to " + o.token.lineNumber);
+	});
 
 	var sourceMap0 = fix.tokensToMappings(expanded);
 	var ast = parser.parse(expanded, undefined, {tokens: true, range: true}, comments);
@@ -95,10 +103,14 @@
 	    var map2 = fix.convertSourceMap(sourceMap.SourceMapGenerator
 					    , options.inFile
 					    , ast.sourceMap);
+
 	    var m1g = sourceMap.SourceMapGenerator.fromSourceMap(
 		new sourceMap.SourceMapConsumer(map1));
-	    sourceMap.SourceMapGenerator.prototype.applySourceMap.call(
-		m1g, new sourceMap.SourceMapConsumer(map1));
+
+	    (new sourceMap.SourceMapConsumer(map1)).eachMapping(function(mapping){
+		console.log(mapping); });
+	    /*sourceMap.SourceMapGenerator.prototype.applySourceMap.call(
+		m1g, new sourceMap.SourceMapConsumer(map2));*/
 	    ast.sourceMap = m1g;
 	}
 
@@ -106,17 +118,15 @@
     };
     
     exports.compile = function compile(code, options) {
-
 	var p = exports.parse(code, options);
 	if(options !== undefined && options.sourceMap !== undefined){
 	    var g = codegen.generate(p,{comment: true
 					,sourceMap: options.outFile
 					,sourceMapWithCode: true});
-	    var c = new sourceMap.SourceMapConsumer(g.map.toJSON());
-	    sourceMap.SourceMapGenerator.prototype.applySourceMap.call(
+	    /*sourceMap.SourceMapGenerator.prototype.applySourceMap.call(
 		p.sourceMap
 		, new sourceMap.SourceMapConsumer(g.map.toJSON())
-		, options.outFile);
+		, options.outFile);*/
 	    g.map = p.sourceMap.toJSON();
 	    return g;
 	}

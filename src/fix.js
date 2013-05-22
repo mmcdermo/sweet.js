@@ -47,7 +47,7 @@
 	    obj.token.old_lineStart = obj.token.lineStart;
 	}
 
-	var lastOldLine = -1;
+	var lastOldLine = 0;
 	var lastOldCol = 0;
 	var lastOldRangeEnd = 0;
 
@@ -69,7 +69,8 @@
 		d = obj.token.old_range[0] - lastOldRangeEnd;
 	    
 	    obj.token.old_lineStart = Math.max(d,0) + lastOldCol;
-	    obj.token.old_lineNumber = lastOldLine;
+	    //this probably wrong. Why is it here?
+	    //obj.token.old_lineNumber = lastOldLine;
 
 	    lastOldCol = obj.token.old_lineStart + obj.token.value.length;
 	    if(d < 0) lastOldRangeEnd = lastOldRangeEnd + obj.token.value.length;
@@ -110,11 +111,11 @@
 	    }
 
 	    fixOldLineCol(obj);
-
+	    
 	    //Fix obj.loc
 	    if (
 		obj.token.value !== undefined && obj.token.value !== null
-	       && obj.token.value.length !== undefined) {
+		    && obj.token.value.length !== undefined) {
 		var locLineStart = obj.token.lineStart;
 		if(isNaN(locLineStart)) locLineStart = 1;
 		obj.loc = {
@@ -188,6 +189,8 @@
 			column: obj.newCols[0]
 		    }
 		};
+		/*console.log("Mapping from line "+obj.origLine+" col "+obj.origCols[0]
+		  + " to line "+obj.newLine+" col "+obj.newCols[0]);*/
 		s.addMapping(z);
 		return z;
 	    }
