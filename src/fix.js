@@ -56,21 +56,41 @@
 	// numbers start @ 0.
 	// Currently broken. TODO.
 	function fixOldLineCol(obj){
-	    if(obj.token.old_range === undefined
-	       || obj.token.value === undefined
+	    if(obj.token.value === undefined
+	       //|| obj.token.old_range === undefined
 	       || obj.token.value === null) return;
+	    
+	    if(obj.token.old_range === undefined){
+		obj.token.old_range = [lastOldRangeEnd + 1
+				     , lastOldRangeEnd + 1 + obj.token.value.length];
+	    }
+
+	    //Case where the first token to be fixed doesn't start at zero.
+	    if(lastOldRangeEnd === 0
+	       && lastOldCol === 0
+	       && lastOldLine === 0){
+		lastOldRangeEnd = obj.token.old_range[0] - 1;
+	    }
+
+	    //Reset counters for a new line
 	    if(obj.token.old_lineNumber != lastOldLine){
 		lastOldCol = 0;
 		lastOldLine += 1;
 	    }
 	    
+	    //Preserve whitespace via range differences
 	    var d = 0;
 	    if(lastOldRangeEnd != 0)
 		d = obj.token.old_range[0] - lastOldRangeEnd;
 	    
 	    obj.token.old_lineStart = Math.max(d,0) + lastOldCol;
-	    //this probably wrong. Why is it here?
-	    //obj.token.old_lineNumber = lastOldLine;
+
+	    if(obj.token.old_lineStart > 100){ 
+		console.log("Supa long"); 
+		console.log(d);
+		console.log(lastOldRangeEnd);
+		console.log(lastOldCol);
+		console.log(obj); }
 
 	    lastOldCol = obj.token.old_lineStart + obj.token.value.length;
 	    if(d < 0) lastOldRangeEnd = lastOldRangeEnd + obj.token.value.length;
@@ -162,6 +182,9 @@
 		nc = [obj.token.lineStart
 		      , obj.token.lineStart + obj.token.value.length]	    
 	    }
+	    console.log("Mapping l_"+obj.token.old_lineNumber+" to l_"+obj.token.lineNumber+" cols:");
+	    console.log(oc);
+	    console.log(nc);
 	    return { origLine: obj.token.old_lineNumber
 		     , newLine:  obj.token.lineNumber
 		     , origCols: oc

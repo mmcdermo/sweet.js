@@ -107,10 +107,16 @@
 	    var m1g = sourceMap.SourceMapGenerator.fromSourceMap(
 		new sourceMap.SourceMapConsumer(map1));
 
+	    /*(new sourceMap.SourceMapConsumer(map1)).eachMapping(function(mapping){
+		console.log(mapping); });*/
 	    (new sourceMap.SourceMapConsumer(map1)).eachMapping(function(mapping){
 		console.log(mapping); });
 	    /*sourceMap.SourceMapGenerator.prototype.applySourceMap.call(
 		m1g, new sourceMap.SourceMapConsumer(map2));*/
+	    console.log("Composed");
+	    (new sourceMap.SourceMapConsumer(m1g.toJSON()))
+		.eachMapping(function(mapping){
+		    console.log(mapping); });
 	    ast.sourceMap = m1g;
 	}
 
