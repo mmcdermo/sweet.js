@@ -3652,12 +3652,12 @@ to decide on the correct name for identifiers.
             return toks[idx];
         }
         
-	skipComment();
-	/*
+	//scanComment();
+	
         if(extra.comments){
-	  scanComment();
+	    scanComment();
 	}
-	else skipComment();*/
+	else skipComment();
 	
         if(isIn(getChar(), delimiters)) {
             return readDelim();
@@ -3824,8 +3824,10 @@ to decide on the correct name for identifiers.
         }
         
         var t = expander.tokensToSyntax(tokenTree);
-	if(Object.prototype.hasOwnProperty.call(extra, "comments"))
+	if(Object.prototype.hasOwnProperty.call(extra, "comments")){
+	    console.log("Comments enabled");
 	    t[t.length] = extra.comments;
+	}
 	return t;
     }
     

@@ -80,11 +80,13 @@
 
 
 	var comments = readTree[readTree.length - 1];
+	console.log(comments);
         var expanded = expander.expand(readTree.splice(0, readTree.length - 1)); 
         // var flattened = expander.flatten(expanded);
 
 	var fixer = fix.fixer(comments);
 	expanded.map(fixer.fixer);
+	comments = fixer.retrieveComments();
 
 	expanded.map(function(o){
 	    console.log(o);
@@ -96,7 +98,16 @@
 
 	if(options !== undefined && options.sourceMap !== undefined){
 	    ast.loc = { start: {line : 1, column: 0}, end : {line: 1000, column: 0}};
-	    ast = codegen.attachComments(ast, comments, ast.tokens);
+	    console.log(comments);
+	    
+	    //attachComments needs a slightly different format than parsed produces
+	    ast.tokens.map(function(obj){
+		for(o in obj.token){
+		    obj[o] = obj.token[o];
+		}
+	    });
+	    ast = codegen.attachComments(ast, comments, ast.tokens); //comments, ast.tokens);
+
 	    var map1 = fix.convertSourceMap(sourceMap.SourceMapGenerator
 					    , options.inFile
 					    , sourceMap0);
@@ -107,16 +118,16 @@
 	    var m1g = sourceMap.SourceMapGenerator.fromSourceMap(
 		new sourceMap.SourceMapConsumer(map1));
 
-	    /*(new sourceMap.SourceMapConsumer(map1)).eachMapping(function(mapping){
-		console.log(mapping); });*/
-	    (new sourceMap.SourceMapConsumer(map1)).eachMapping(function(mapping){
-		console.log(mapping); });
-	    /*sourceMap.SourceMapGenerator.prototype.applySourceMap.call(
-		m1g, new sourceMap.SourceMapConsumer(map2));*/
-	    console.log("Composed");
+	    //compose source maps
+	    sourceMap.SourceMapGenerator.prototype.applySourceMap.call(
+		m1g, new sourceMap.SourceMapConsumer(map2));
+
+	    //logging info
+	    /*console.log("Composed");
 	    (new sourceMap.SourceMapConsumer(m1g.toJSON()))
 		.eachMapping(function(mapping){
-		    console.log(mapping); });
+		    console.log(mapping); });*/
+
 	    ast.sourceMap = m1g;
 	}
 
