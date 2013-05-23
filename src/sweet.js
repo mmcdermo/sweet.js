@@ -88,11 +88,11 @@
 	var sourceMap0 = fix.tokensToMappings(expanded); 
 
 	if(options !== undefined){
-	    expanded.map(function(o){
+	    /*expanded.map(function(o){
 		console.log(o);
 		console.log("Mapping " + o.token.old_lineNumber + " to " + o.token.lineNumber);
 	});
-	    sourceMap0.map(console.log);
+	    sourceMap0.map(console.log);*/
 	}
 
 
@@ -128,8 +128,8 @@
 	    var m2g = sourceMap.SourceMapGenerator.fromSourceMap(
 		new sourceMap.SourceMapConsumer(map2));
 
-	    /*sourceMap.SourceMapGenerator.prototype.applySourceMap.call(
-		m2g, new sourceMap.SourceMapConsumer(map1));*/
+	    sourceMap.SourceMapGenerator.prototype.applySourceMap.call(
+		m2g, new sourceMap.SourceMapConsumer(map1));
 
 	    //logging info
 	    console.log("Composed");
@@ -137,7 +137,7 @@
 		.eachMapping(function(mapping){
 		    console.log(mapping); });
 
-	    ast.sourceMap = m1g;
+	    ast.sourceMap = m2g;
 	}
 
         return ast;
@@ -150,9 +150,10 @@
 					,sourceMap: options.outFile
 					,sourceMapWithCode: true});
 	    /*sourceMap.SourceMapGenerator.prototype.applySourceMap.call(
-		p.sourceMap
-		, new sourceMap.SourceMapConsumer(g.map.toJSON())
-		, options.outFile);*/
+	      g.map
+		, new sourceMap.SourceMapConsumer(p.sourceMap.toJSON())
+		, options.outFile);
+	    g.map = g.map.toJSON();*/
 	    g.map = p.sourceMap.toJSON();
 	    return g;
 	}
