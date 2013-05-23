@@ -3942,6 +3942,7 @@ to decide on the correct name for identifiers.
 	    var fix = fixer.fixer(comments); //this is clear
 	    program.tokens.map( fix.fixer )
 	    program.sourceMap = fixer.tokensToMappings(program.tokens);
+	    program.comments = fix.retrieveComments();
 	}
 
         return program;

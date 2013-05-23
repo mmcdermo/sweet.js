@@ -84,6 +84,7 @@
         var expanded = expander.expand(readTree.splice(0, readTree.length - 1)); 
         // var flattened = expander.flatten(expanded);
 
+	//We need to fix the new location for expanded
 	var fixer = fix.fixer(comments);
 	expanded.map(fixer.fixer);
 	comments = fixer.retrieveComments();
@@ -95,10 +96,11 @@
 
 	var sourceMap0 = fix.tokensToMappings(expanded);
 	var ast = parser.parse(expanded, undefined, {tokens: true, range: true}, comments);
+	comments = ast.comments;
 
 	if(options !== undefined && options.sourceMap !== undefined){
 	    ast.loc = { start: {line : 1, column: 0}, end : {line: 1000, column: 0}};
-	    console.log(comments);
+
 	    
 	    //attachComments needs a slightly different format than parsed produces
 	    ast.tokens.map(function(obj){
