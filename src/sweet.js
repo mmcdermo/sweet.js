@@ -75,41 +75,45 @@
             }
         }
 
-        var readTree = parser.read(source, {comment: true});
+        var parserRead = parser.read(source, {comment: true});
+	var comments = parserRead.comments;
+	var expanded = expander.expand(parserRead.tree);
 
-
-
-	var comments = readTree[readTree.length - 1];
-	console.log(comments);
-        var expanded = expander.expand(readTree.splice(0, readTree.length - 1)); 
-        // var flattened = expander.flatten(expanded);
-
-	//We need to fix the new location for expanded
+	//Fix range, loc for expanded
 	var fixer = fix.fixer(comments);
 	expanded.map(fixer.fixer);
 	comments = fixer.retrieveComments();
 
-	expanded.map(function(o){
-	    console.log(o);
-	    console.log("Mapping " + o.token.old_lineNumber + " to " + o.token.lineNumber);
-	});
+	//get sourcemap from SJS to expanded
+	var sourceMap0 = fix.tokensToMappings(expanded); 
 
-	var sourceMap0 = fix.tokensToMappings(expanded);
+	if(options !== undefined){
+	    expanded.map(function(o){
+		console.log(o);
+		console.log("Mapping " + o.token.old_lineNumber + " to " + o.token.lineNumber);
+	});
+	    sourceMap0.map(console.log);
+	}
+
+
 	var ast = parser.parse(expanded, undefined, {tokens: true, range: true}, comments);
 	comments = ast.comments;
 
 	if(options !== undefined && options.sourceMap !== undefined){
-	    ast.loc = { start: {line : 1, column: 0}, end : {line: 1000, column: 0}};
-
+	    var lastLine = ast.tokens[ ast.tokens.length - 1 ].lineNumber;
+	    ast.loc = { start: {line : 1, column: 0}, end : {line: lastLine + 1, column: 0}};
 	    
-	    //attachComments needs a slightly different format than parsed produces
+	    //codegen.attachComments needs tokens to have different format
 	    ast.tokens.map(function(obj){
 		for(o in obj.token){
 		    obj[o] = obj.token[o];
 		}
 	    });
-	    ast = codegen.attachComments(ast, comments, ast.tokens); //comments, ast.tokens);
 
+	    console.log(comments);
+	    ast = codegen.attachComments(ast, comments, ast.tokens);
+
+	    //Generate mozilla source-maps 
 	    var map1 = fix.convertSourceMap(sourceMap.SourceMapGenerator
 					    , options.inFile
 					    , sourceMap0);
@@ -117,18 +121,21 @@
 					    , options.inFile
 					    , ast.sourceMap);
 
+	    //compose source maps (sjs -> expanded) and (expanded -> renamed)
 	    var m1g = sourceMap.SourceMapGenerator.fromSourceMap(
 		new sourceMap.SourceMapConsumer(map1));
 
-	    //compose source maps
-	    sourceMap.SourceMapGenerator.prototype.applySourceMap.call(
-		m1g, new sourceMap.SourceMapConsumer(map2));
+	    var m2g = sourceMap.SourceMapGenerator.fromSourceMap(
+		new sourceMap.SourceMapConsumer(map2));
+
+	    /*sourceMap.SourceMapGenerator.prototype.applySourceMap.call(
+		m2g, new sourceMap.SourceMapConsumer(map1));*/
 
 	    //logging info
-	    /*console.log("Composed");
+	    console.log("Composed");
 	    (new sourceMap.SourceMapConsumer(m1g.toJSON()))
 		.eachMapping(function(mapping){
-		    console.log(mapping); });*/
+		    console.log(mapping); });
 
 	    ast.sourceMap = m1g;
 	}

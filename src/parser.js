@@ -3218,7 +3218,7 @@ to decide on the correct name for identifiers.
 
         while (index < length) {
             ch = source[index];
-	    console.log(index);
+	    //console.log(index);
             if (lineComment) {
                 ch = nextChar();
                 if (index >= length) {
@@ -3825,8 +3825,7 @@ to decide on the correct name for identifiers.
         
         var t = expander.tokensToSyntax(tokenTree);
 	if(Object.prototype.hasOwnProperty.call(extra, "comments")){
-	    console.log("Comments enabled");
-	    t[t.length] = extra.comments;
+	    return {tree : t, comments: extra.comments}
 	}
 	return t;
     }
