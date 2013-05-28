@@ -419,7 +419,7 @@
                     type: stx.token.type,
                     lineNumber: from.token.lineNumber,
                     lineStart: from.token.lineStart,
-                    range: null // need to figure out range after expansion 
+                    range: from.token.range // need to figure out range after expansion 
                 }, stx.context);
         });
     }
@@ -695,7 +695,7 @@
             var openParen = syntaxFromToken({
                 type: parser.Token.Punctuator,
                 value: this.delim.token.value[0],
-                range: this.delim.token.startRange,
+                range: [this.delim.token.startRange, this.delim.token.endRange],
                 lineNumber: this.delim.token.startLineNumber,
                 lineStart: this.delim.token.startLineStart
             });
@@ -703,7 +703,7 @@
             var closeParen = syntaxFromToken({
                 type: parser.Token.Punctuator,
                 value: this.delim.token.value[1],
-                range: this.delim.token.endRange,
+                range:  [this.delim.token.startRange, this.delim.token.endRange],
                 lineNumber: this.delim.token.endLineNumber,
                 lineStart: this.delim.token.endLineStart
             });

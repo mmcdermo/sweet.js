@@ -3412,7 +3412,10 @@ to decide on the correct name for identifiers.
 		    console.log(curr);
 		    assert(false, "curr.range is null");
 		}
-                assert(!isNaN(curr.range), "curr.range is a number")
+		if(!isNaN(curr.range)){
+		    console.log(curr);
+                    assert(false, "curr.range is a number")
+		}
                 rangeInfo = [curr.range[0], 0];
                 locInfo = {
                     start: {

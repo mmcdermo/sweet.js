@@ -31,6 +31,10 @@
 
 	function copyOld(obj) {
 	    //range
+	    if(!isNaN(obj.token.range)){
+		console.log("Number range");
+		console.log(obj);
+	    }
 	    if (obj.token.range === undefined 
 		|| obj.token.range === null
 		|| !isNaN(obj.token.range) ) {
@@ -58,13 +62,14 @@
 	// numbers start @ 0.
 	function fixOldLineCol(obj){
 	    if(obj.token.value === undefined
-	       //|| obj.token.old_range === undefined
 	       || obj.token.value === null) return;
 
 	    var safeLen = obj.token.value.toString().length;
 	    if(isNaN(safeLen)){ console.log("IsNaN"); console.log(obj.token); }
 	    
 	    if(obj.token.old_range === undefined){
+		/*console.log("Token with undefined old range");
+		console.log(obj.token);*/
 		obj.token.old_range = [lastOldRangeEnd + 1
 				     , lastOldRangeEnd + 1 + safeLen]
 	    }
@@ -97,11 +102,17 @@
 	    else lastOldRangeEnd = obj.token.old_range[1];
 	}
 	
-	//need this named now so we can call it on comments
+	//A function that can be mapped over tokens in an array, using
+	// the info gathered in the closure to repair token location information
 	function fixer (obj) {
 	    copyOld(obj); //copys old information for mapping reasons
 
 	    //See if a comment fits here - if it does, fix it appropriately.
+	    if(obj.token.old_range === undefined){
+		console.log("Old_range undefined!");
+		console.log(obj);
+		
+	    }
 	    while(unprocessedComments.length &&
 		  ((obj.token.old_range !== undefined
 		   && unprocessedComments[0].range[0] < obj.token.old_range[0])
@@ -113,7 +124,13 @@
 		unprocessedComments = unprocessedComments.slice(1, unprocessedComments.length);
 		var l = lineNumber;
 		fixer(upc);
-		if(lineNumber === l) lineNumber += 1;
+
+		//Comments always end up on their own lines
+		if(lineNumber == l){
+		    lineNumber += 1;
+		    col = 0;
+		}
+		
 		upc.range = upc.token.range;
 		comments.push(upc);
 	    }
@@ -170,7 +187,7 @@
 	};
     }
 
-    //this will hopefully turn the token array into the array format you want for convertSourceMap
+    //Converts array of tokens to an intermediary source-map format
     function tokensToMappings(objs) {
 	return objs.map(function(obj) {
 	    var oc = [0,0];
