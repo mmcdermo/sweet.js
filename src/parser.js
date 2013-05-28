@@ -3406,9 +3406,13 @@ to decide on the correct name for identifiers.
                 var node, rangeInfo, locInfo;
 
                 //skipComment();
-
+		
 		var curr = tokenStream[index].token;
-                
+		if(curr.range === null){
+		    console.log(curr);
+		    assert(false, "curr.range is null");
+		}
+                assert(!isNaN(curr.range), "curr.range is a number")
                 rangeInfo = [curr.range[0], 0];
                 locInfo = {
                     start: {
@@ -3749,6 +3753,7 @@ to decide on the correct name for identifiers.
         var endLineNumber = token.lineNumber;
         var endLineStart = token.lineStart;
         var endRange = token.range;
+	assert(endRange !== undefined, "Parser end range not defined");
         return {
             type: Token.Delimiter,
             value: startDelim.value + matchDelim[startDelim.value], 

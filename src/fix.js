@@ -31,7 +31,9 @@
 
 	function copyOld(obj) {
 	    //range
-	    if (obj.token.range === undefined || obj.token.range === null) {
+	    if (obj.token.range === undefined 
+		|| obj.token.range === null
+		|| !isNaN(obj.token.range) ) {
 		obj.token.old_range = undefined;
 		obj.token.range = new Array(2);
 	    }
