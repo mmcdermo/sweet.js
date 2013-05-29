@@ -24,6 +24,7 @@
     function sir_fix_alot(comments) {
 	var loc = 0;
 	var lineNumber = 0;
+	var lastTokenNewline = true; //the last token caused a newline
 	var col = 0;
 	var newlineTokens = ["{", "}", ";"];
 	var unprocessedComments = comments;
@@ -69,7 +70,7 @@
 	    
 	    if(obj.token.old_range === undefined){
 		/*console.log("Token with undefined old range");
-		console.log(obj.token);*/
+		  console.log(obj.token);*/
 		obj.token.old_range = [lastOldRangeEnd + 1
 				     , lastOldRangeEnd + 1 + safeLen]
 	    }
@@ -108,18 +109,21 @@
 	    copyOld(obj); //copys old information for mapping reasons
 
 	    //See if a comment fits here - if it does, fix it appropriately.
+	    //insert comments after newlines
 	    if(obj.token.old_range === undefined){
 		console.log("Old_range undefined!");
 		console.log(obj);
 		
 	    }
-	    while(unprocessedComments.length &&
-		  ((obj.token.old_range !== undefined
-		   && unprocessedComments[0].range[0] < obj.token.old_range[0])
-		  || 
-		  (obj.token.old_range === undefined 
-		   && unprocessedComments[0].old_lineNumber === lineNumber))){
+
+	    while(unprocessedComments.length && lastTokenNewline
+		  && ((obj.token.old_range !== undefined
+		       && unprocessedComments[0].range[0] < obj.token.old_range[0])
+		      || 
+		      (obj.token.old_range === undefined 
+		       && unprocessedComments[0].old_lineNumber === lineNumber))){
 		var upc = unprocessedComments[0];
+
 		upc.token = upc.clone(); //compatability for copyOld
 		unprocessedComments = unprocessedComments.slice(1, unprocessedComments.length);
 		var l = lineNumber;
@@ -133,6 +137,7 @@
 		
 		upc.range = upc.token.range;
 		comments.push(upc);
+		lastTokenNewline = true; //comments cause newlines
 	    }
 	    
 	    //write new location information to token
@@ -150,9 +155,11 @@
 	    col += 1;
 
 	    //should the token cause a newline to occur
+	    lastTokenNewline = false;
 	    if (newlineTokens.indexOf(obj.token.value) !== -1) {
 		col = 0;
 		lineNumber += 1;
+		lastTokenNewline = true;
 	    }
 
 	    fixOldLineCol(obj);

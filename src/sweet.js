@@ -99,6 +99,7 @@
 	var ast = parser.parse(expanded, undefined, {tokens: true, range: true}, comments);
 	comments = ast.comments;
 
+	
 	if(options !== undefined && options.sourceMap !== undefined){
 	    var lastLine = ast.tokens[ ast.tokens.length - 1 ].lineNumber;
 	    ast.loc = { start: {line : 1, column: 0}, end : {line: lastLine + 1, column: 0}};
@@ -110,7 +111,6 @@
 		}
 	    });
 
-	    console.log(comments);
 	    ast = codegen.attachComments(ast, comments, ast.tokens);
 
 	    //Generate mozilla source-maps 
@@ -132,10 +132,10 @@
 		m2g, new sourceMap.SourceMapConsumer(map1));
 
 	    //logging info
-	    console.log("Composed");
+	    /*console.log("Composed");
 	    (new sourceMap.SourceMapConsumer(m1g.toJSON()))
 		.eachMapping(function(mapping){
-		    console.log(mapping); });
+		    console.log(mapping); });*/
 
 	    ast.sourceMap = m2g;
 	}
