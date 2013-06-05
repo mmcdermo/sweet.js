@@ -1343,12 +1343,13 @@ to decide on the correct name for identifiers.
         // todo: cleanup
         line = tokenStream[index-1].token.lineNumber;
         token = tokenStream[index].token;
-        if(line !== token.lineNumber) {
+        /*if(line !== token.lineNumber) {
             return;
         }
         if (token.type !== Token.EOF && !match('}')) {
             throwUnexpected(token);
-        }
+        }*/
+	tokenStream[index-1].token.causesNewline = true;
         return;
     }
 
@@ -3218,7 +3219,7 @@ to decide on the correct name for identifiers.
 
         while (index < length) {
             ch = source[index];
-
+	    //console.log(index);
             if (lineComment) {
                 ch = nextChar();
                 if (index >= length) {
@@ -3395,20 +3396,27 @@ to decide on the correct name for identifiers.
                     node.range = [node.left.range[0], node.right.range[1]];
                 }
                 if (loc && typeof node.loc === 'undefined') {
-                    node.loc = {
+                    /*node.loc = {
                         start: node.left.loc.start,
                         end: node.right.loc.end
-                    };
+                    };*/
                 }
             }
 
             return function () {
                 var node, rangeInfo, locInfo;
 
-                // skipComment();
-                
-                var curr = tokenStream[index].token;
-                
+                //skipComment();
+		
+		var curr = tokenStream[index].token;
+		if(curr.range === null){
+		    console.log(curr);
+		    assert(false, "curr.range is null");
+		}
+		if(!isNaN(curr.range)){
+		    console.log(curr);
+                    assert(false, "curr.range is a number")
+		}
                 rangeInfo = [curr.range[0], 0];
                 locInfo = {
                     start: {
@@ -3418,6 +3426,7 @@ to decide on the correct name for identifiers.
                 };
 
                 node = parseFunction.apply(null, arguments);
+
                 if (typeof node !== 'undefined') {
                     var last = tokenStream[index].token;
 
@@ -3431,7 +3440,7 @@ to decide on the correct name for identifiers.
                             line: last.lineNumber,
                             column: last.lineStart
                         };
-                        node.loc = locInfo;
+                        //node.loc = locInfo;
                     }
 
                     if (isBinary(node)) {
@@ -3651,11 +3660,12 @@ to decide on the correct name for identifiers.
             return toks[idx];
         }
         
-        
-        //skipComment();
+	//scanComment();
+	
         if(extra.comments){
 	    scanComment();
 	}
+	else skipComment();
 	
         if(isIn(getChar(), delimiters)) {
             return readDelim();
@@ -3747,6 +3757,7 @@ to decide on the correct name for identifiers.
         var endLineNumber = token.lineNumber;
         var endLineStart = token.lineStart;
         var endRange = token.range;
+	assert(endRange !== undefined, "Parser end range not defined");
         return {
             type: Token.Delimiter,
             value: startDelim.value + matchDelim[startDelim.value], 
@@ -3822,7 +3833,9 @@ to decide on the correct name for identifiers.
         }
         
         var t = expander.tokensToSyntax(tokenTree);
-	t[t.length] = extra.comments;
+	if(Object.prototype.hasOwnProperty.call(extra, "comments")){
+	    return {tree : t, comments: extra.comments}
+	}
 	return t;
     }
     
@@ -3847,27 +3860,26 @@ to decide on the correct name for identifiers.
         };
 
         extra = {};
-        if (typeof options !== 'undefined') {
-            /*if(options.range || options.loc) {
-                assert(false, "Note range and loc is not currently implemented");
-            }*/
-            extra.range = (typeof options.range === 'boolean') && options.range;
-            extra.loc = (typeof options.loc === 'boolean') && options.loc;
-            extra.raw = (typeof options.raw === 'boolean') && options.raw;
-            if (typeof options.tokens === 'boolean' && options.tokens) {
-                extra.tokens = [];
-            }
-            if (typeof options.comment === 'boolean' && options.comment) {
-                extra.comments = [];
-            }
-            if (typeof options.tolerant === 'boolean' && options.tolerant) {
-                extra.errors = [];
-            }
-            if(typeof options.noresolve === 'boolean' && options.noresolve) {
-                extra.noresolve = options.noresolve
-            } else {
-                extra.noresolve = false;
-            }
+	
+	if (typeof options === 'undefined'){
+	    options = { tokens: true, range: true }
+	}
+        extra.range = (typeof options.range === 'boolean') && options.range;
+        extra.loc = (typeof options.loc === 'boolean') && options.loc;
+        extra.raw = (typeof options.raw === 'boolean') && options.raw;
+        if (typeof options.tokens === 'boolean' && options.tokens) {
+            extra.tokens = [];
+        }
+        if (typeof options.comment === 'boolean' && options.comment) {
+            extra.comments = [];
+        }
+        if (typeof options.tolerant === 'boolean' && options.tolerant) {
+            extra.errors = [];
+        }
+        if(typeof options.noresolve === 'boolean' && options.noresolve) {
+            extra.noresolve = options.noresolve
+        } else {
+            extra.noresolve = false;
         }
         
         patch();
@@ -3933,10 +3945,14 @@ to decide on the correct name for identifiers.
             extra = {};
         }
 	
-	//fix program.tokens with fixer
-	//var fix = fixer.fixer(comments); //this is clear
-	//program.tokens.map( fix.fixer );
-	
+	//fix program.tokens with fixer and generate sourcemap
+	if(Object.prototype.hasOwnProperty.call(program, "tokens")){
+	    var fix = fixer.fixer(comments); //this is clear
+	    program.tokens.map( fix.fixer )
+	    program.sourceMap = fixer.tokensToMappings(program.tokens);
+	    program.comments = fix.retrieveComments();
+	}
+
         return program;
     }
     

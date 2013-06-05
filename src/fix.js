@@ -110,11 +110,11 @@
 
 	    //See if a comment fits here - if it does, fix it appropriately.
 	    //insert comments after newlines
-	    if(obj.token.old_range === undefined){
-		console.log("Old_range undefined!");
-		console.log(obj);
+	//    if(obj.token.old_range === undefined){
+		//console.log("Old_range undefined!");
+	//	console.log(obj);
 		
-	    }
+	  //  }
 
 	    while(unprocessedComments.length && lastTokenNewline
 		  && ((obj.token.old_range !== undefined
@@ -156,7 +156,8 @@
 
 	    //should the token cause a newline to occur
 	    lastTokenNewline = false;
-	    if (newlineTokens.indexOf(obj.token.value) !== -1) {
+	    if (newlineTokens.indexOf(obj.token.value) !== -1 ||
+		obj.token.causesNewline === true) {
 		col = 0;
 		lineNumber += 1;
 		lastTokenNewline = true;
