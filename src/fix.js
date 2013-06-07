@@ -103,7 +103,7 @@
 	    
 	    obj.token.old_lineStart = Math.max(d,0) + lastOldCol;
 
-	    if (isNaN(obj.token.old_lineStart)) {console.log("IsNaN"); console.log(obj.token); }
+//here it is	    if (isNaN(obj.token.old_lineStart)) {console.log("IsNaN"); console.log(obj.token); }
 	    lastOldCol = obj.token.old_lineStart + safeLen;
 	    if(d < 0) lastOldRangeEnd = lastOldRangeEnd + safeLen;
 	    else lastOldRangeEnd = obj.token.old_range[1];
@@ -150,7 +150,7 @@
 	    if(obj.token.firstOnLine && lastTokenESNewline === false){
 //		console.log(obj.token.value);
 		lineNumber++; col = 0;
-		obj.token.firstOnLine = false;
+//		obj.token.firstOnLine = false;
 	    }
 	    		
 	    lastTokenESNewline = false;
@@ -267,15 +267,30 @@
 
     function markNewlines(tokenStream) {
 	var line = -1;
+	var lastTok = null;
+
+	function newline(obj) {
+	    obj.token.firstOnLine = true;
+	    line = obj.token.lineNumber;
+	}
+
 	function marker(obj) {
-	    if (line === -1 || line !== obj.token.lineNumber) {
-		if (obj.token.hasOwnProperty('inner')) {
+	    if (obj.token.lineNumber === undefined) {
+		//[] () {}
+		
+		//if it starts a newline
+		if (obj.token.startLineNumber !== line) {
+		    newline(obj);
+		}
+		
+		//recurse on inner content
+		if (obj.token.hasOwnProperty('inner')) {		
 		    obj.token.inner.map(marker);
 		}
-		else {
-		    obj.token.firstOnLine = true;
-		    line = obj.token.lineNumber;
-		}
+	    }
+	    //if its not a {} [] () then check if it starts a new line
+	    else if (line === -1 || line !== obj.token.lineNumber) {
+		newline(obj);
 	    }
 	}
 
