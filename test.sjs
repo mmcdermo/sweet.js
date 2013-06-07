@@ -9,7 +9,6 @@ macro class {
       = function $methodName $methodParam $methodBody; ) ...
   }
 }
-
 class Person {
   constructor(name) {
     this.name = name;
@@ -18,14 +17,17 @@ class Person {
     console.log(this.name + " says: " + msg);
   }
 }
-
 var bob = new Person("Bob");
 bob.say("Macros are sweet!");
+console.log("semi-less");
 
-console.log("Indeed!");
+if (bob) {
+   console.log("thingy");
+   console.log("second one");
+   console.log("duuuuuuuuuuude");
+}  
 
 
-console.log("Indeed2!")
+console.log("Indeed2!");
 console.log("Indeed3!");
-
 console.log("Indeed4!");

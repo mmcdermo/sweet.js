@@ -10,9 +10,10 @@
         factory((root.expander = {}), root._, root.parser);
     }
 }(this, function (exports, codegen, sourceMap) {
+    "use strict";
     Object.prototype.clone = function() {
 	var newObj = (this instanceof Array) ? [] : {};
-	for (i in this) {
+	for (var i in this) {
 	    if (i == 'clone') continue;
 	    if (this[i] && typeof this[i] == "object") {
 		newObj[i] = this[i].clone();
@@ -27,6 +28,7 @@
 	var lastTokenNewline = true; //the last token caused a newline
 	var col = 0;
 	var newlineTokens = ["{", "}", ";"];
+	var lastTokenESNewline = false;
 	var unprocessedComments = comments;
 	var comments = [];
 
@@ -66,7 +68,7 @@
 	       || obj.token.value === null) return;
 
 	    var safeLen = obj.token.value.toString().length;
-	    if(isNaN(safeLen)){ console.log("IsNaN"); console.log(obj.token); }
+//	    if(isNaN(safeLen)){ console.log("IsNaN"); console.log(obj.token); }
 	    
 	    if(obj.token.old_range === undefined){
 		/*console.log("Token with undefined old range");
@@ -93,11 +95,15 @@
 	    
 	    //Preserve whitespace via range differences
 	    var d = 0;
+	    if(obj.token.old_range === undefined){
+		obj.token.old_range = [lastOldRangeEnd + 1, ];
+	    }
 	    if(lastOldRangeEnd != 0)
 		d = obj.token.old_range[0] - lastOldRangeEnd;
 	    
 	    obj.token.old_lineStart = Math.max(d,0) + lastOldCol;
 
+	    if (isNaN(obj.token.old_lineStart)) {console.log("IsNaN"); console.log(obj.token); }
 	    lastOldCol = obj.token.old_lineStart + safeLen;
 	    if(d < 0) lastOldRangeEnd = lastOldRangeEnd + safeLen;
 	    else lastOldRangeEnd = obj.token.old_range[1];
@@ -141,6 +147,13 @@
 	    }
 	    
 	    //write new location information to token
+	    if(obj.token.firstOnLine && lastTokenESNewline === false){
+//		console.log(obj.token.value);
+		lineNumber++; col = 0;
+		obj.token.firstOnLine = false;
+	    }
+	    		
+	    lastTokenESNewline = false;
 	    obj.token.range[0] = loc;
 	    obj.token.lineStart = col;
 	    obj.token.lineNumber = lineNumber;
@@ -150,16 +163,34 @@
 		loc += safeLen;
 		col += safeLen;
 	    }
+
 	    obj.token.range[1] = loc;
 	    loc += 1;
 	    col += 1;
 
 	    //should the token cause a newline to occur
-	    lastTokenNewline = false;
-	    if (newlineTokens.indexOf(obj.token.value) !== -1 ||
-		obj.token.causesNewline === true) {
+	    /*lastTokenNewline = false;
+	    if (obj.token.causesNewline) {
 		col = 0;
 		lineNumber += 1;
+		lastTokenNewline = true;
+	    }*/	   
+
+	    if (obj.token.causesNewLine === true) {
+//		console.log(obj.token.value);
+	    }
+	    if (newlineTokens.indexOf(obj.token.value) !== -1){
+		////|| obj.token.causesNewLine){
+		/* || obj.token.firstOnLine === true) {
+
+		if (obj.token.firstOnLine === true) {
+		    obj.token.lineNumber += 1;
+		    lineStart = 0;
+		}*/
+
+		col = 0;
+		lineNumber += 1;
+		lastTokenESNewline = true;
 		lastTokenNewline = true;
 	    }
 
@@ -200,20 +231,27 @@
 	return objs.map(function(obj) {
 	    var oc = [0,0];
 	    var nc = [0,0];
-	    if(obj.token.value !== undefined && obj.token.value !== null
-	       && obj.token.value.length !== undefined
-	       && obj.token.lineStart !== undefined 
-	       && obj.token.lineStart){
-		if(obj.token.old_lineStart !== undefined 
-		   && obj.token.old_lineStart !== null
-		   && !isNaN(obj.token.old_lineStart)
-		   && obj.token.value.length !== undefined){
-		    oc = [obj.token.old_lineStart
-			  , obj.token.old_lineStart + obj.token.value.length]
+	        if(obj.token.value !== undefined && obj.token.value !== null
+		          && obj.token.value.length !== undefined
+		          && obj.token.lineStart !== undefined 
+		          && obj.token.lineStart){
+		    if(obj.token.old_lineStart !== undefined 
+		       && obj.token.old_lineStart !== null
+		       && !isNaN(obj.token.old_lineStart)
+		       && obj.token.value.length !== undefined){
+			oc = [obj.token.old_lineStart
+			      , obj.token.old_lineStart + obj.token.value.length]
+		    }
+		    nc = [obj.token.lineStart
+			  , obj.token.lineStart + obj.token.value.length]    
 		}
+	    /*if(obj.token.value !== undefined){
+		var len = obj.token.value.toString().length;
+		oc = [obj.token.old_lineStart
+		      , obj.token.old_lineStart + len]
 		nc = [obj.token.lineStart
-		      , obj.token.lineStart + obj.token.value.length]	    
-	    }
+		      , obj.token.lineStart + len]	    
+	    }*/
 	    /*console.log("Mapping l_"+obj.token.old_lineNumber+" to l_"+obj.token.lineNumber+" cols:");
 	    console.log(oc);
 	    console.log(nc);*/
@@ -227,7 +265,22 @@
 	});
     }
 
+    function markNewlines(tokenStream) {
+	var line = -1;
+	function marker(obj) {
+	    if (line === -1 || line !== obj.token.lineNumber) {
+		if (obj.token.hasOwnProperty('inner')) {
+		    obj.token.inner.map(marker);
+		}
+		else {
+		    obj.token.firstOnLine = true;
+		    line = obj.token.lineNumber;
+		}
+	    }
+	}
 
+	tokenStream.map(marker);
+    }
 
     function convertSourceMap(SourceMapGenerator, fileName, m){
 	var s = new SourceMapGenerator({file : fileName});
@@ -265,4 +318,5 @@
     exports.fixer = sir_fix_alot;
     exports.tokensToMappings = tokensToMappings;
     exports.convertSourceMap = convertSourceMap;
+    exports.markNewlines = markNewlines;
 }));

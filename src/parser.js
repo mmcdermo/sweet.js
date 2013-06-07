@@ -1343,13 +1343,14 @@ to decide on the correct name for identifiers.
         // todo: cleanup
         line = tokenStream[index-1].token.lineNumber;
         token = tokenStream[index].token;
-        /*if(line !== token.lineNumber) {
+        if(line !== token.lineNumber) {
             return;
         }
         if (token.type !== Token.EOF && !match('}')) {
+	    tokenStream[index-1].token.causesNewline = true;
             throwUnexpected(token);
-        }*/
-	tokenStream[index-1].token.causesNewline = true;
+        }
+
         return;
     }
 

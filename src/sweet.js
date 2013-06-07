@@ -74,16 +74,20 @@
                 }
             }
         }
-
+	
         var parserRead = parser.read(source, {comment: true});
+	fix.markNewlines(parserRead.tree);
 	var comments = parserRead.comments;
 	var expanded = expander.expand(parserRead.tree);
+	
 
 	//Fix range, loc for expanded
 	var fixer = fix.fixer(comments);
 	expanded.map(fixer.fixer);
 	comments = fixer.retrieveComments();
 
+
+	
 	//get sourcemap from SJS to expanded
 	var sourceMap0 = fix.tokensToMappings(expanded); 
 
@@ -128,16 +132,18 @@
 	    var m2g = sourceMap.SourceMapGenerator.fromSourceMap(
 		new sourceMap.SourceMapConsumer(map2));
 
-	    sourceMap.SourceMapGenerator.prototype.applySourceMap.call(
+/*	    sourceMap.SourceMapGenerator.prototype.applySourceMap.call(
 		m2g, new sourceMap.SourceMapConsumer(map1));
-
+*/
 	    //logging info
 	    /*console.log("Composed");
 	    (new sourceMap.SourceMapConsumer(m1g.toJSON()))
 		.eachMapping(function(mapping){
 		    console.log(mapping); });*/
 
-	    ast.sourceMap = m2g;
+	    
+
+	    ast.sourceMap = m1g;
 	}
 
         return ast;
