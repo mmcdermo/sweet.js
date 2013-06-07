@@ -278,8 +278,9 @@
 	    if (obj.token.lineNumber === undefined) {
 		//[] () {}
 		
+		//not sure how to put the two tokens obj turns into after expansion into their own newlines...
 		//if it starts a newline
-		if (obj.token.startLineNumber !== line) {
+		if (line === -1 || obj.token.startLineNumber !== line) {
 		    newline(obj);
 		}
 		
@@ -287,11 +288,13 @@
 		if (obj.token.hasOwnProperty('inner')) {		
 		    obj.token.inner.map(marker);
 		}
+
 	    }
 	    //if its not a {} [] () then check if it starts a new line
 	    else if (line === -1 || line !== obj.token.lineNumber) {
 		newline(obj);
 	    }
+	    lastTok = obj.token;
 	}
 
 	tokenStream.map(marker);
