@@ -27,8 +27,8 @@
 	var lineNumber = 0;
 	var lastTokenNewline = true; //the last token caused a newline
 	var col = 0;
-	var newlineTokens = ["{", "}", ";"];
-	var lastTokenESNewline = false;
+	var newlineTokens = ["}", "{"];
+	var lastTokVal = '';
 	var unprocessedComments = comments;
 	var comments = [];
 
@@ -146,14 +146,50 @@
 		lastTokenNewline = true; //comments cause newlines
 	    }
 	    
+	    function tokenIsOpen(tok){
+		if(tok.value === '[' || tok.value === '{' || tok.value === '(')
+		    return true
+		else return false;
+	    }
+	    
+	    function tokenIsClose(tok){
+		if(tok.value === ']' || tok.value === '}' || tok.value === ')')
+		    return true
+		else return false;
+	    }
+
+
+	    if(obj.token.hasOwnProperty("openIsFirstOnLine")){
+		console.log("Open is first on line: ");
+		console.log(obj.token);
+	    }
+
+	    if(obj.token.hasOwnProperty("closeIsFirstOnLine")){
+		console.log("Close is first on line: ");
+		console.log(obj.token);
+	    }
+		
+
 	    //write new location information to token
-	    if(obj.token.firstOnLine && lastTokenESNewline === false){
-//		console.log(obj.token.value);
+	    if(
+		lastTokVal === "}" || lastTokVal === "{" ||
+		(obj.token.firstOnLine 
+		|| (obj.token.openIsFirstOnLine && tokenIsOpen(obj.token))
+		|| (obj.token.closeIsFirstOnLine && tokenIsClose(obj.token))
+	      )){
+		if(obj.token.openIsFirstOnLine || obj.token.closeIsFirstOnLine){
+		    console.log("First on line!: ");
+		    console.log(obj.token);
+		}
+	
+		console.log("firstOnLine: (last tok val = "+lastTokVal+")");
+		console.log(obj.token.value);
 		lineNumber++; col = 0;
+		lastTokenNewline = true;
+		
 //		obj.token.firstOnLine = false;
 	    }
 	    		
-	    lastTokenESNewline = false;
 	    obj.token.range[0] = loc;
 	    obj.token.lineStart = col;
 	    obj.token.lineNumber = lineNumber;
@@ -168,31 +204,7 @@
 	    loc += 1;
 	    col += 1;
 
-	    //should the token cause a newline to occur
-	    /*lastTokenNewline = false;
-	    if (obj.token.causesNewline) {
-		col = 0;
-		lineNumber += 1;
-		lastTokenNewline = true;
-	    }*/	   
-
-	    if (obj.token.causesNewLine === true) {
-//		console.log(obj.token.value);
-	    }
-	    if (newlineTokens.indexOf(obj.token.value) !== -1){
-		////|| obj.token.causesNewLine){
-		/* || obj.token.firstOnLine === true) {
-
-		if (obj.token.firstOnLine === true) {
-		    obj.token.lineNumber += 1;
-		    lineStart = 0;
-		}*/
-
-		col = 0;
-		lineNumber += 1;
-		lastTokenESNewline = true;
-		lastTokenNewline = true;
-	    }
+	    lastTokVal = obj.token.value;
 
 	    fixOldLineCol(obj);
 	    
@@ -269,30 +281,31 @@
 	var line = -1;
 	var lastTok = null;
 
-	function newline(obj) {
-	    obj.token.firstOnLine = true;
-	    line = obj.token.lineNumber;
+	function newline(obj, flagProp, lineProp) {
+	    if (line === -1 || obj.token[lineProp] !== line) {
+		obj.token[flagProp] = true;
+		line = obj.token[lineProp];
+	    }
 	}
 
 	function marker(obj) {
-	    if (obj.token.lineNumber === undefined) {
+	    if (obj.token.hasOwnProperty("startLineNumber")
+		|| obj.token.lineNumber === undefined) {
 		//[] () {}
-		
 		//not sure how to put the two tokens obj turns into after expansion into their own newlines...
 		//if it starts a newline
-		if (line === -1 || obj.token.startLineNumber !== line) {
-		    newline(obj);
-		}
-		
+		newline(obj, "openIsFirstOnLine", "startLineNumber");
+
 		//recurse on inner content
 		if (obj.token.hasOwnProperty('inner')) {		
 		    obj.token.inner.map(marker);
 		}
-
+		
+		newline(obj, "closeIsFirstOnLine", "endLineNumber");
 	    }
 	    //if its not a {} [] () then check if it starts a new line
-	    else if (line === -1 || line !== obj.token.lineNumber) {
-		newline(obj);
+	    else {
+		newline(obj, "firstOnLine", "lineNumber");
 	    }
 	    lastTok = obj.token;
 	}
