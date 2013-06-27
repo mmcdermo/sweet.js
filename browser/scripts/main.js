@@ -40,10 +40,10 @@ require(["sweet", "./fix", "./escodegen", "./parser", "./expander"
         var code = document.getElementById("sweetjs").text;
         // var res = sweet.compile(code);
 	
-	var readRes = read(code, {comment: true});
-	var comments = readRes[readRes.length - 1];
-	readRes = readRes.splice(0, readRes.length - 1);
-	
+	var read = read(code, {comment: true});
+	var readRes = read.tree;
+	var comments = read.comments;
+
         var res = expand(readRes);
         // var result = expander.enforest(parser.read(code));
         // var result = expander.expandf(parser.read(code));
