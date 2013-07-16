@@ -27,7 +27,7 @@
 	var lineNumber = 0;
 	var lastTokenNewline = true; //the last token caused a newline
 	var col = 0;
-	var newlineTokens = ["}", "{"];
+	var newlineTokens = [";"];
 	var lastTokVal = '';
 	var unprocessedComments = comments;
 	var comments = [];
@@ -159,7 +159,7 @@
 	    }
 
 
-	    if(obj.token.hasOwnProperty("openIsFirstOnLine")){
+	    /*if(obj.token.hasOwnProperty("openIsFirstOnLine")){
 		console.log("Open is first on line: ");
 		console.log(obj.token);
 	    }
@@ -167,7 +167,7 @@
 	    if(obj.token.hasOwnProperty("closeIsFirstOnLine")){
 		console.log("Close is first on line: ");
 		console.log(obj.token);
-	    }
+	    }*/
 		
 
 	    //write new location information to token
@@ -177,13 +177,13 @@
 		|| (obj.token.openIsFirstOnLine && tokenIsOpen(obj.token))
 		|| (obj.token.closeIsFirstOnLine && tokenIsClose(obj.token))
 	      )){
-		if(obj.token.openIsFirstOnLine || obj.token.closeIsFirstOnLine){
+		/*if(obj.token.openIsFirstOnLine || obj.token.closeIsFirstOnLine){
 		    console.log("First on line!: ");
 		    console.log(obj.token);
-		}
+		}*/
 	
-		console.log("firstOnLine: (last tok val = "+lastTokVal+")");
-		console.log(obj.token.value);
+		//console.log("firstOnLine: (last tok val = "+lastTokVal+")");
+		//console.log(obj.token.value);
 		lineNumber++; col = 0;
 		lastTokenNewline = true;
 		

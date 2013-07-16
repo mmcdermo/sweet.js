@@ -76,10 +76,11 @@
         }
 	
         var parserRead = parser.read(source, {comment: true});
-	fix.markNewlines(parserRead.tree);
+	console.log(parserRead.tree);
+	fix.markNewlines(parserRead.tree);	
 	var comments = parserRead.comments;
 	var expanded = expander.expand(parserRead.tree);
-	
+
 
 	//Fix range, loc for expanded
 	var fixer = fix.fixer(comments);
